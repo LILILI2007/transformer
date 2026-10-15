@@ -1,0 +1,8 @@
+{
+  "Name": "ModLingo 演示农场",
+  "Author": "ModLingo",
+  "Version": "1.0.0",
+  "Description": "自创翻译测试素材，不是可加载的游戏 mod。",
+  "UniqueID": "ModLingo.DemoFarm",
+  "ContentPackFor": { "UniqueID": "Pathoschild.ContentPatcher" }
+}

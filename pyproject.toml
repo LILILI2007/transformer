@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "modlingo-stardew"
+version = "0.1.0"
+description = "A local-first Chinese desktop translator for Stardew Valley standard i18n mods"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [{name = "ModLingo contributors"}]
+dependencies = []
+
+[project.gui-scripts]
+modlingo = "modlingo.gui:main"
+
+[tool.setuptools]
+packages = ["modlingo"]

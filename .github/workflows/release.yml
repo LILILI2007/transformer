@@ -1,0 +1,47 @@
+name: Release preview
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[release]')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate source and GUI
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
+          python -m modlingo --smoke
+          if ($LASTEXITCODE -ne 0) { throw 'GUI smoke failed' }
+      - name: Build Windows portable package
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+      - name: Validate packaged application
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath ./dist/ModLingo/ModLingo.exe -ArgumentList '--smoke' -WindowStyle Hidden -PassThru
+          if (-not $process.WaitForExit(60000)) { $process.Kill(); throw 'Portable smoke timed out' }
+          if ($process.ExitCode -ne 0) { throw 'Portable smoke failed' }
+          python scripts/package_source.py
+          if ($LASTEXITCODE -ne 0) { throw 'Source packaging failed' }
+      - name: Publish preview release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releaseTag = $env:GITHUB_REF_NAME
+          if ($releaseTag -eq 'main') {
+            $version = python -c 'from modlingo import __version__; print(__version__)'
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot determine version' }
+            $releaseTag = "v$version"
+          }
+          gh release create $releaseTag release/ModLingo-Windows-x64.zip release/ModLingo-source.zip release/SHA256SUMS.txt release/build-environment.txt --target $env:GITHUB_SHA --prerelease --title "ModLingo $releaseTag 预览版" --notes-file docs/release-notes.md
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

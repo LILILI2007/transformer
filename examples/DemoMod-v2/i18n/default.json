@@ -1,0 +1,10 @@
+{
+  "dialogue.greeting": "Hello, {{PlayerName}}! Welcome back to the farm.$h",
+  "item.starfruit.name": "Starfruit Jam",
+  "item.starfruit.description": "A sweet jar of Starfruit jam.",
+  "ui.open": "Open the greenhouse",
+  "dialogue.day": "Good morning!#$b#The crops look healthy today.$h",
+  "dialogue.farm": "Your %farm farm is looking lovely, @!",
+  "ui.lines": "Farm journal\nToday's harvest",
+  "ui.new": "Check the seed collection"
+}

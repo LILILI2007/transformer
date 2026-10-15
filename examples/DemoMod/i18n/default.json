@@ -1,0 +1,12 @@
+{
+  // 合法 JSONC：注释和尾逗号均用于导入验证。
+  "dialogue.greeting": "Hello, {{PlayerName}}! Welcome to the farm.$h",
+  "item.starfruit.name": "Starfruit Jam",
+  "item.starfruit.description": "A sweet jar of Starfruit jam.",
+  "ui.open": "Open the greenhouse",
+  "dialogue.day": "Good morning!#$b#The crops look healthy today.$h",
+  "dialogue.farm": "Your %farm farm is looking lovely, @!",
+  "ui.lines": "Farm journal\nToday's harvest",
+  "event.complex": "$q 10/11 question#What do you think?",
+  "gender.complex": "You are ${handsome^beautiful}$ today.",
+}
