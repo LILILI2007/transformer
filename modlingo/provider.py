@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .core import TOKEN, ProjectError, validate_translation
+from . import __version__
 
 
 @dataclass
@@ -78,7 +79,7 @@ class Translator:
     def _request(self, messages):
         endpoint = self.config.endpoint()
         body = json.dumps({"model": self.config.model.strip(), "messages": messages, "stream": False}, ensure_ascii=False).encode("utf-8")
-        headers = {"Content-Type": "application/json", "User-Agent": "ModLingo/0.1"}
+        headers = {"Content-Type": "application/json", "User-Agent": "ModLingo/" + __version__}
         if self.config.api_key.strip():
             headers["Authorization"] = "Bearer " + self.config.api_key.strip()
         request = Request(endpoint, data=body, headers=headers, method="POST")

@@ -541,11 +541,12 @@ def CounterStates(project):
 def main():
     parser = argparse.ArgumentParser(description="ModLingo 星露谷 mod 翻译工作台")
     parser.add_argument("--smoke", action="store_true", help="无网络 GUI 启动检查")
+    parser.add_argument("--editor", action="store_true", help="打开单 mod 编辑器")
     args = parser.parse_args()
     enable_dpi_awareness()
     root = tk.Tk()
-    app = App(root)
     if args.smoke:
+        app = App(root)
         root.withdraw()
         # The smoke check deliberately does not write to a user's projects.
         app.project = Project.from_mod(asset_root() / "examples" / "DemoMod")
@@ -553,7 +554,21 @@ def main():
         root.update()
         assert len(app.tree.get_children()) == len(app.project.entries)
         assert "{{PlayerName}}" in app.project.entries["dialogue.greeting"].source
+        for callback in root.tk.call('after', 'info'):
+            root.after_cancel(callback)
+        root.destroy()
+        from .library_gui import LibraryApp
+        root = tk.Tk()
+        root.withdraw()
+        library = LibraryApp(root, auto=False)
+        root.update()
+        assert not library.items and not library.busy
         root.destroy()
         print("GUI smoke passed: Chinese UI, example import and entry selection; no network calls.")
     else:
+        if args.editor:
+            App(root)
+        else:
+            from .library_gui import LibraryApp
+            LibraryApp(root)
         root.mainloop()
