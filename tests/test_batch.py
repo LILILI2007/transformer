@@ -263,7 +263,7 @@ class BatchTests(unittest.TestCase):
         original = target.read_bytes()
         from modlingo.batch import atomic_write
         def fail_target(path, content):
-            if Path(path) == target:
+            if Path(path).resolve() == target.resolve():
                 raise PermissionError('test denied')
             return atomic_write(path, content)
         with patch('modlingo.batch.atomic_write', side_effect=fail_target):
