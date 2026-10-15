@@ -2,9 +2,11 @@
 
 面向普通玩家的 Windows 中文工具。导入星露谷 mod 的标准 i18n 文本，通过自己配置的大模型 API 生成简中初稿，修改并检查后导出翻译包。更新 mod 时复用未变译文，只处理新增和变更内容。
 
-**当前版本：0.1.0 可运行原型。** 只支持平铺的 `i18n/default.json` / `i18n/zh.json`，不支持任意 mod 全量汉化。示例是自创测试素材，不是可加载的游戏 mod。
+**当前版本：0.1.0 预览版。** 只支持平铺的 `i18n/default.json` / `i18n/zh.json`，不支持任意 mod 全量汉化。示例是自创测试素材，不是可加载的游戏 mod。
 
 ![中文工作台预览；示例译文人工填写](artifacts/preview.png)
+
+[下载 Windows 便携版](https://github.com/LILILI2007/transformer/releases/download/v0.1.0/ModLingo-Windows-x64.zip) · [发行说明与源码包](https://github.com/LILILI2007/transformer/releases/tag/v0.1.0)
 
 ## 给玩家：如何启动
 
@@ -85,4 +87,4 @@ python -m modlingo --smoke
 powershell -ExecutionPolicy Bypass -File scripts/build_windows.ps1
 ```
 
-源码可按 MIT 许可使用。游戏、mod 及其文本的权利不因本工具许可而改变；发布翻译包前应检查原作者的许可。当前目录可上传 GitHub。CI 配置需要推送后才会在云端执行；推送 v 开头的版本标签会先测试、构建并检查便携程序，再创建 GitHub 预览版发行及下载附件。发行说明见 docs/release-notes.md。
+源码可按 MIT 许可使用。游戏、mod 及其文本的权利不因本工具许可而改变；发布翻译包前应检查原作者的许可。项目已发布到 [GitHub](https://github.com/LILILI2007/transformer)。[云端验证](https://github.com/LILILI2007/transformer/actions/runs/38761121082)的 Windows/Linux、Python 3.11/3.13 四组测试及便携构建均通过；[预览版发行流程](https://github.com/LILILI2007/transformer/actions/runs/38761121415)的测试、构建和便携 EXE 启动检查通过。推送 v 开头的版本标签会自动构建并发布预览版；首次发布也可用 main 提交消息中的 `[release]` 触发。发行说明见 docs/release-notes.md。
