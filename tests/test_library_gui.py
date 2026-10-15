@@ -20,6 +20,7 @@ class LibraryGUITests(unittest.TestCase):
         self.root = tk.Tk()
         self.root.withdraw()
         self.app = LibraryApp(self.root, auto=False)
+        self.root.update_idletasks()
 
     def tearDown(self):
         for callback in self.root.tk.call('after', 'info'):
@@ -74,3 +75,50 @@ class LibraryGUITests(unittest.TestCase):
         self.app.close()
         self.assertTrue(self.app.stop.is_set())
         self.assertTrue(self.root.winfo_exists())
+
+    def test_search_preserves_selection_and_all_selects_hidden_mods(self):
+        game = Path(self.temp.name) / 'Game'
+        items = [ModItem(game / 'Mods' / 'A', 'Apple'), ModItem(game / 'Mods' / 'B', 'Berry')]
+        self.app.show_items(game, items)
+        self.app.search.set('apple')
+        self.assertEqual(self.app.tree.get_children(), ('0',))
+        self.assertTrue(items[1].selected)
+        self.app.select_all(False)
+        self.assertFalse(any(item.selected for item in items))
+        self.assertEqual(self.app.metrics['selected'].get(), '0')
+        self.app.search.set('')
+        self.assertEqual(self.app.tree.get_children(), ('0', '1'))
+
+    def test_rescan_clears_detached_rows_from_previous_inventory(self):
+        game = Path(self.temp.name) / 'Game'
+        self.app.show_items(game, [ModItem(game / 'Mods' / str(i), str(i)) for i in range(3)])
+        self.app.search.set('0')
+        self.assertTrue(self.app.tree.exists('2'))
+        self.app.show_items(game, [ModItem(game / 'Mods' / 'new', 'New')])
+        self.app.search.set('')
+        self.assertEqual(self.app.tree.get_children(), ('0',))
+        self.assertFalse(self.app.tree.exists('2'))
+
+    def test_filtered_result_updates_counts_and_shows_complete_reason(self):
+        game = Path(self.temp.name) / 'Game'
+        item = ModItem(game / 'Mods' / 'A', 'Apple')
+        self.app.show_items(game, [item])
+        self.app.view.set('需要关注')
+        self.assertEqual(self.app.tree.get_children(), ())
+        self.app.events.put(('result', {'folder': str(item.folder), 'name': item.name, 'status': '失败', 'reason': '完整失败原因'}))
+        self.app.poll()
+        self.assertEqual(self.app.tree.get_children(), ('0',))
+        self.assertEqual(self.app.metrics['attention'].get(), '1')
+        self.app.tree.selection_set('0')
+        self.app.select_details()
+        self.assertIn('完整失败原因', self.app.row_details.get())
+
+    def test_minimum_window_keeps_primary_action_visible(self):
+        self.root.deiconify()
+        width, height = self.root.minsize()
+        self.root.geometry('%dx%d' % (width, height))
+        self.root.update()
+        button_bottom = self.app.start_button.winfo_rooty() + self.app.start_button.winfo_height()
+        window_bottom = self.root.winfo_rooty() + self.root.winfo_height()
+        self.assertLessEqual(button_bottom, window_bottom)
+        self.assertGreater(self.app.tree.winfo_height(), 60)

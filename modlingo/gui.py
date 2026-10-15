@@ -18,6 +18,7 @@ from tkinter.scrolledtext import ScrolledText
 
 from .core import Project, ProjectError, glossary_warnings, unsupported_reason, validate_translation
 from .provider import APIConfig, Translator, batches
+from .theme import COLORS, FarmBanner, apply_theme, style_rows
 
 
 def asset_root():
@@ -42,7 +43,7 @@ class App:
         height = min(round(820 * scale), self.root.winfo_screenheight() - 90)
         self.root.geometry(f"{width}x{height}")
         self.root.minsize(min(round(1000 * scale), width), min(round(720 * scale), height))
-        self.root.configure(bg="#f3f5f0")
+        self.root.configure(bg=COLORS['page'])
         self.project = None
         self.project_path = None
         self.current_key = None
@@ -61,24 +62,15 @@ class App:
         self.root.after(100, self._poll)
 
     def _build(self):
-        style = ttk.Style(self.root)
-        style.theme_use("clam")
-        style.configure("TFrame", background="#f3f5f0")
-        style.configure("TLabel", background="#f3f5f0", foreground="#24352d", font=("Microsoft YaHei UI", 10))
-        style.configure("TButton", font=("Microsoft YaHei UI", 10), padding=(12, 7))
-        style.configure("Accent.TButton", background="#32664c", foreground="white")
-        style.map("Accent.TButton", background=[("active", "#244d39"), ("disabled", "#a2afa5")])
-        style.configure("Treeview", rowheight=31, font=("Microsoft YaHei UI", 10), background="#ffffff", fieldbackground="#ffffff")
-        style.configure("Treeview.Heading", font=("Microsoft YaHei UI", 10, "bold"), padding=8)
-        style.map("Treeview", background=[("selected", "#32664c")])
+        apply_theme(self.root)
         wrapper = ttk.Frame(self.root, padding=22)
         wrapper.pack(fill="both", expand=True)
+        FarmBanner(wrapper, title='ModLingo · 精修', subtitle='对照原文，照料每一条中文译文。', compact=True).pack(fill='x', pady=(0, 10))
         header = ttk.Frame(wrapper)
         header.pack(fill="x")
-        ttk.Label(header, text="ModLingo", font=("Segoe UI", 25, "bold")).pack(side="left")
-        ttk.Label(header, text="星露谷 mod 翻译工作台", font=("Microsoft YaHei UI", 14)).pack(side="left", padx=16, pady=9)
+        ttk.Label(header, text="单 mod 翻译工作台", font=("Microsoft YaHei UI", 12, 'bold')).pack(side="left")
         ttk.Button(header, text="API 设置", command=self.settings).pack(side="right")
-        ttk.Label(wrapper, text="01 导入 mod    →    02 翻译与检查    →    03 确认变更    →    04 导出并安装", foreground="#617266").pack(anchor="w", pady=(2, 18))
+        ttk.Label(wrapper, text="01 导入 mod    →    02 翻译与检查    →    03 确认变更    →    04 导出并安装", foreground=COLORS['muted']).pack(anchor="w", pady=(2, 18))
         toolbar = ttk.Frame(wrapper)
         toolbar.pack(fill="x")
         for label, command in [("打开示例", self.sample), ("导入 mod", self.import_mod), ("载入更新", self.update_mod), ("打开项目", self.open_project), ("保存副本", self.save_copy), ("术语表", self.glossary_dialog)]:
@@ -105,6 +97,7 @@ class App:
         body.add(left, weight=5)
         body.add(right, weight=6)
         self.tree = ttk.Treeview(left, columns=("state", "text"), show="headings", selectmode="browse")
+        style_rows(self.tree)
         self.tree.heading("state", text="状态")
         self.tree.heading("text", text="英文原文 / 翻译键")
         self.tree.column("state", width=115, minwidth=105, stretch=False)
@@ -117,11 +110,11 @@ class App:
         self.key_label = ttk.Label(right, text="尚未选择条目", font=("Microsoft YaHei UI", 10, "bold"), wraplength=540)
         self.key_label.pack(anchor="w", pady=(0, 8))
         ttk.Label(right, text="英文原文").pack(anchor="w")
-        self.source_text = ScrolledText(right, height=5, wrap="word", font=("Microsoft YaHei UI", 11), bd=1, relief="solid", padx=10, pady=8)
+        self.source_text = ScrolledText(right, height=5, wrap="word", font=("Microsoft YaHei UI", 11), bg=COLORS['white'], fg=COLORS['ink'], insertbackground=COLORS['wood'], bd=1, relief="solid", padx=10, pady=8)
         self.source_text.pack(fill="x", pady=(5, 10))
         self.source_text.configure(state="disabled")
         ttk.Label(right, text="中文译文 · 可直接修改").pack(anchor="w")
-        self.target_text = ScrolledText(right, height=6, wrap="word", font=("Microsoft YaHei UI", 11), bd=1, relief="solid", padx=10, pady=8, undo=True)
+        self.target_text = ScrolledText(right, height=6, wrap="word", font=("Microsoft YaHei UI", 11), bg=COLORS['white'], fg=COLORS['ink'], insertbackground=COLORS['wood'], bd=1, relief="solid", padx=10, pady=8, undo=True)
         self.target_text.pack(fill="both", expand=True, pady=(5, 8))
         self.confirm_button = ttk.Button(right, text="保存 / 确认此条", command=self.confirm_entry, style="Accent.TButton")
         self.confirm_button.pack(anchor="e")
@@ -266,7 +259,8 @@ class App:
                 continue
             index = str(len(self.visible_keys))
             self.visible_keys.append(key)
-            self.tree.insert("", "end", iid=index, values=(status, entry.source.replace("\n", " ↵ ")[:100] or key))
+            tag = 'good' if status in ('可导出', '人工已确认') else 'failed' if status == '检查失败' else 'attention' if status in ('暂不支持', '更新待确认', '译文待确认') else 'even'
+            self.tree.insert("", "end", iid=index, tags=(tag,), values=(status, entry.source.replace("\n", " ↵ ")[:100] or key))
         if selected in self.visible_keys:
             iid = str(self.visible_keys.index(selected))
         else:

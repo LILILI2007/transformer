@@ -27,7 +27,7 @@ root.attributes("-topmost", True)
 def capture():
     root.update_idletasks()
     bounds = (root.winfo_rootx(), root.winfo_rooty(), root.winfo_rootx() + root.winfo_width(), root.winfo_rooty() + root.winfo_height())
-    output = root_dir / "artifacts" / "preview.png"
+    output = root_dir / "artifacts" / "qa-editor.png"
     output.parent.mkdir(exist_ok=True)
     ImageGrab.grab(bbox=bounds).save(output)
     root.destroy()

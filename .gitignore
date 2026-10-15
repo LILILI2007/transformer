@@ -15,3 +15,4 @@ data/
 local-projects/
 artifacts/*.json
 artifacts/*.zip
+artifacts/qa-*.png
