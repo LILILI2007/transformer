@@ -51,7 +51,7 @@ class App:
         self.busy = False
         self.stop_event = threading.Event()
         self.events = queue.Queue()
-        self.config = APIConfig(api_key=os.environ.get("MODLINGO_API_KEY", ""))
+        self.config = APIConfig(api_key=os.environ.get("MODLINGO_API_KEY", ""), provider="deepseek")
         self.status = tk.StringVar(value="先打开示例体验，或选择包含 manifest.json 的单个 mod 文件夹。")
         self.summary = tk.StringVar(value="本地工作台  /  英语 → 简体中文")
         self.filter = tk.StringVar(value="全部")
@@ -59,7 +59,7 @@ class App:
         self.details = tk.StringVar(value="选择左侧条目，在右侧修改或确认译文。")
         self._build()
         self.root.protocol("WM_DELETE_WINDOW", self.close)
-        self.root.after(100, self._poll)
+        self.poll_id = self.root.after(100, self._poll)
 
     def _build(self):
         apply_theme(self.root)
@@ -318,40 +318,11 @@ class App:
     def settings(self):
         if not self.guard(False):
             return
-        window = tk.Toplevel(self.root)
-        window.title("大模型 API 设置")
-        window.geometry("650x420")
-        window.transient(self.root)
-        window.grab_set()
-        frame = ttk.Frame(window, padding=24)
-        frame.pack(fill="both", expand=True)
-        fields = []
-        for label, value, secret in [("服务基础地址（也可填完整 chat/completions 地址）", self.config.base_url, False), ("模型名称（从服务商控制台复制）", self.config.model, False), ("API 密钥（仅本次运行有效）", self.config.api_key, True)]:
-            ttk.Label(frame, text=label).pack(anchor="w", pady=(6, 4))
-            var = tk.StringVar(value=value)
-            ttk.Entry(frame, textvariable=var, show="•" if secret else "").pack(fill="x")
-            fields.append(var)
-        ttk.Label(frame, text="支持 Chat Completions 格式的文本接口。示例服务地址：\nhttps://api.deepseek.com；模型名称请以服务商最新说明为准。\n远程服务须使用 HTTPS；本机模型可使用 HTTP。\n调用会发送待译文本、翻译键及相关术语，并可能产生费用。", wraplength=590, foreground="#785d2c").pack(anchor="w", pady=18)
-
-        def config():
-            return APIConfig(*(var.get().strip() for var in fields))
-
-        def save(test=False):
-            try:
-                candidate = config()
-                candidate.endpoint()
-                self.config = candidate
-                window.destroy()
-                self.status.set("API 配置已应用。密钥仅在内存中；关闭程序后需重新填写。")
-                if test:
-                    self.test_connection()
-            except ProjectError as exc:
-                messagebox.showerror("配置待修正", str(exc), parent=window)
-
-        buttons = ttk.Frame(frame)
-        buttons.pack(fill="x")
-        ttk.Button(buttons, text="应用并测试连接", command=lambda: save(True)).pack(side="left")
-        ttk.Button(buttons, text="应用", command=save, style="Accent.TButton").pack(side="right")
+        from .api_settings import APISettingsDialog
+        def apply(config):
+            self.config = config
+            self.status.set('API 配置已应用。密钥仅在内存中，关闭后需重新填写。')
+        self.api_dialog = APISettingsDialog(self.root, self.config, apply, self.test_connection)
 
     def _set_busy(self, busy):
         self.busy = busy
@@ -452,7 +423,7 @@ class App:
         except (ProjectError, OSError) as exc:
             self.stop_event.set()
             self.fail(exc)
-        self.root.after(100, self._poll)
+        self.poll_id = self.root.after(100, self._poll)
 
     def glossary_dialog(self):
         if not self.guard():
@@ -520,6 +491,7 @@ class App:
         self.stop_event.set()
         self._commit()
         self.checkpoint()
+        self.root.after_cancel(self.poll_id)
         self.root.destroy()
 
 
@@ -557,8 +529,14 @@ def main():
         library = LibraryApp(root, auto=False)
         root.update()
         assert not library.items and not library.busy
+        library.settings()
+        root.update()
+        assert library.api_dialog is not None
+        library.api_dialog.window.destroy()
+        for callback in root.tk.call('after', 'info'):
+            root.after_cancel(callback)
         root.destroy()
-        print("GUI smoke passed: Chinese UI, example import and entry selection; no network calls.")
+        print("GUI smoke passed: Chinese UI, example import, entry selection and API settings; no network calls.")
     else:
         if args.editor:
             App(root)

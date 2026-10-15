@@ -168,11 +168,13 @@ class BatchTests(unittest.TestCase):
     def test_bad_key_stops_further_paid_requests(self):
         self.make_mod('A')
         self.make_mod('B')
-        translator = FakeTranslator('API 请求失败（401）：密钥无效或已过期')
-        _, report = self.run_all(translator)
-        self.assertEqual(len(translator.calls), 1)
-        self.assertEqual(len(report['failure']), 2)
-        self.assertIn('剩余', report['failure'][1]['reason'])
+        for status in (400, 401):
+            with self.subTest(status=status):
+                translator = FakeTranslator(f'API 请求失败（{status}）：配置无效')
+                _, report = self.run_all(translator)
+                self.assertEqual(len(translator.calls), 1)
+                self.assertEqual(len(report['failure']), 2)
+                self.assertIn('剩余', report['failure'][1]['reason'])
 
     def test_failed_request_preserves_original_and_retry_uses_saved_batches(self):
         source = {str(i): 'Hello ' + str(i) for i in range(10)}

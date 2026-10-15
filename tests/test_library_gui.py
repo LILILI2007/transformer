@@ -122,3 +122,48 @@ class LibraryGUITests(unittest.TestCase):
         window_bottom = self.root.winfo_rooty() + self.root.winfo_height()
         self.assertLessEqual(button_bottom, window_bottom)
         self.assertGreater(self.app.tree.winfo_height(), 60)
+
+    def test_provider_switch_clears_key_and_sets_native_protocol(self):
+        from modlingo.provider import PRESETS, PROTOCOLS
+        self.app.config.api_key = 'private-ui-test-key'
+        self.app.settings()
+        dialog = self.app.api_dialog
+        dialog.provider.set(PRESETS['claude'].label)
+        dialog.choose_provider()
+        self.assertEqual(dialog.api_key.get(), '')
+        self.assertEqual(dialog.model.get(), '')
+        self.assertEqual(dialog.protocol.get(), PROTOCOLS['anthropic'])
+        self.assertEqual(dialog.base_url.get(), 'https://api.anthropic.com/v1')
+        dialog.model.set('contract-model')
+        dialog.api_key.set('new-test-key')
+        dialog.workspace.set('wrkspc_contract')
+        dialog.save()
+        self.assertEqual(self.app.config.protocol, 'anthropic')
+        self.assertEqual(self.app.config.workspace_id, 'wrkspc_contract')
+
+    def test_custom_protocol_and_qwen_thinking_defaults(self):
+        from modlingo.provider import PRESETS, PROTOCOLS
+        self.app.settings()
+        dialog = self.app.api_dialog
+        dialog.provider.set(PRESETS['qwen'].label)
+        dialog.choose_provider()
+        self.assertTrue(dialog.disable_thinking.get())
+        dialog.provider.set(PRESETS['custom'].label)
+        dialog.choose_provider()
+        self.assertFalse(dialog.disable_thinking.get())
+        dialog.base_url.set('http://127.0.0.1:8080/v1')
+        dialog.model.set('local')
+        dialog.protocol.set(PROTOCOLS['responses'])
+        self.assertEqual(dialog.candidate().endpoint(), 'http://127.0.0.1:8080/v1/responses')
+
+    def test_single_editor_uses_same_provider_configuration(self):
+        from modlingo.gui import App
+        from modlingo.provider import preset_config
+        window = __import__('tkinter').Toplevel(self.root)
+        editor = App(window)
+        editor.config = preset_config('openai', 'contract-model', 'private-test-key')
+        editor.settings()
+        self.assertEqual(editor.api_dialog.candidate().protocol, 'responses')
+        editor.api_dialog.save()
+        self.assertEqual(editor.config.provider, 'openai')
+        editor.close()

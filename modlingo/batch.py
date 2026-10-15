@@ -238,7 +238,7 @@ def run_batch(items, mods, translator, stop_event, storage=None, notify=lambda r
                     result.update(status='成功', reason='中文已安装；请用 SMAPI 启动，并将游戏语言设为中文')
             except ProjectError as exc:
                 result['reason'] = str(exc)
-                if any(code in str(exc) for code in ('（401）', '（403）', '（404）', '（429）')):
+                if any(code in str(exc) for code in ('（400）', '（401）', '（403）', '（404）', '（429）')):
                     fatal = str(exc)
             except OSError:
                 result['reason'] = '文件读写失败，请检查权限、磁盘空间或文件是否被占用；未完成的 mod 可重新扫描重试'

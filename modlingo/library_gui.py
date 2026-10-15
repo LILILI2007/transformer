@@ -32,7 +32,7 @@ class LibraryApp:
         self.mods = None
         self.report_path = None
         self.results = []
-        self.config = APIConfig(api_key=os.environ.get('MODLINGO_API_KEY', ''))
+        self.config = APIConfig(api_key=os.environ.get('MODLINGO_API_KEY', ''), provider='deepseek')
         self.game = tk.StringVar()
         self.status = tk.StringVar(value='正在准备自动识别目录；也可以手动指定游戏目录。')
         self.summary = tk.StringVar(value='首次使用：自动识别 → 配置 API → 默认全选 → 翻译并安装 → 查看结果')
@@ -309,35 +309,20 @@ class LibraryApp:
     def settings(self):
         if not self.guard():
             return
-        window = tk.Toplevel(self.root)
-        window.title('API 设置')
-        window.transient(self.root)
-        window.grab_set()
-        window.configure(bg=COLORS['page'])
-        FarmBanner(window, title='翻译 API', subtitle='为农场连接你的模型服务', compact=True).pack(fill='x')
-        frame = ttk.Frame(window, padding=20)
-        frame.pack(fill='both', expand=True)
-        fields = []
-        for title, value, secret in [('服务地址', self.config.base_url, False), ('模型名称', self.config.model, False), ('API 密钥（仅本次运行）', self.config.api_key, True)]:
-            ttk.Label(frame, text=title).pack(anchor='w', pady=(8, 4))
-            field = ttk.Entry(frame, width=65, show='•' if secret else '')
-            field.insert(0, value)
-            field.pack(fill='x')
-            fields.append(field)
-        ttk.Label(frame, text='待译文本会发给你选定的服务，费用由你的 API 账号承担。\n支持 Chat Completions 文本接口；远程用 HTTPS，本机可用 HTTP。').pack(pady=15)
-        def save(test=False):
-            try:
-                config = APIConfig(*(field.get().strip() for field in fields))
-                config.endpoint()
-                self.config = config
-                window.destroy()
-                self.status.set('API 已配置；现在可以翻译并安装所选 mod。')
-                if test:
-                    self.launch(lambda: (Translator(replace(config)).translate([('test', 'Hello, farmer!')], {}), self.events.put(('message', '连接及响应格式检查通过。'))))
-            except ProjectError as exc:
-                messagebox.showerror('配置待修正', str(exc), parent=window)
-        ttk.Button(frame, text='保存并测试（可能计费）', command=lambda: save(True)).pack(side='left')
-        ttk.Button(frame, text='保存设置', command=save).pack(side='right')
+        from .api_settings import APISettingsDialog
+        def apply(config):
+            self.config = config
+            self.status.set('API 已配置；现在可以翻译并安装所选 mod。')
+        self.api_dialog = APISettingsDialog(self.root, self.config, apply, self.test_connection)
+
+    def test_connection(self):
+        if not self.guard():
+            return
+        config = replace(self.config)
+        def worker():
+            Translator(config).translate([('test', 'Hello, farmer!')], {})
+            self.events.put(('message', '连接及响应格式检查通过；不代表全部模型或翻译质量。'))
+        self.launch(worker)
 
     def start(self):
         if not self.guard():
