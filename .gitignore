@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv*/
+.build-tools/
+build/
+dist/
+release/
+*.spec
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+data/
+local-projects/
+artifacts/*.json
+artifacts/*.zip
