@@ -4,10 +4,10 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from .core import Project, ProjectError, read_jsonc
+from .core import Project, ProjectError, read_jsonc, locale_paths, translation_target
 
 
 def linked(path):
@@ -107,9 +107,12 @@ def discover_games(saved=None, roots=None):
     return list(found.values())
 
 
-def fingerprint(folder):
+def fingerprint(folder, details=None):
     digest = hashlib.sha256()
-    for name in ('manifest.json', 'i18n/default.json', 'i18n/zh.json'):
+    names = {'manifest.json', 'i18n/default.json', 'i18n/zh.json'}
+    names.update(str(p.relative_to(folder)).replace('\\', '/') for locale in ('default', 'zh') for p in locale_paths(folder, locale))
+    names.add(str(translation_target(folder).relative_to(folder)).replace('\\', '/'))
+    for name in sorted(names):
         path = Path(folder) / name
         if linked(path) or linked(path.parent):
             raise ProjectError('mod 文本使用链接或目录联接，暂不自动写入')
@@ -117,9 +120,12 @@ def fingerprint(folder):
         if path.exists():
             if not path.is_file() or path.stat().st_size > 20 * 1024 * 1024:
                 raise ProjectError('语言文件不是普通文件或超过 20 MB')
-            digest.update(b'present' + path.read_bytes())
+            raw=path.read_bytes()
+            digest.update(b'present' + raw)
+            if details is not None:details[name]=hashlib.sha256(raw).hexdigest()
         else:
             digest.update(b'absent')
+            if details is not None:details[name]=None
     return digest.hexdigest()
 
 
@@ -132,6 +138,7 @@ class ModItem:
     reason: str = ''
     snapshot: str = ''
     selected: bool = True
+    snapshot_files: dict = field(default_factory=dict)
 
 
 def scan_mods(mods):
@@ -151,7 +158,7 @@ def scan_mods(mods):
                     item.name = str(manifest.get('Name', folder.name))
                     item.mod_id = str(manifest.get('UniqueID', ''))
                     item.version = str(manifest.get('Version', ''))
-                item.snapshot = fingerprint(folder)
+                item.snapshot = fingerprint(folder,item.snapshot_files)
                 Project.from_mod(folder)
             except (ProjectError, OSError) as exc:
                 item.reason = str(exc)

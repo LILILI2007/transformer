@@ -9,6 +9,7 @@ release.mkdir(exist_ok=True)
 files = [root / name for name in ("README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "pyproject.toml", "requirements-build.txt", "Start.cmd", "run_modlingo.py", ".gitignore", "artifacts/preview.png")]
 for name in ("modlingo", "examples", "tests", "docs", "scripts", ".github"):
     files.extend(path for path in (root / name).rglob("*") if path.is_file() and "__pycache__" not in path.parts and path.suffix not in (".pyc", ".pyo"))
+files.extend(path for path in (root / 'bridge').rglob('*') if path.is_file() and not {'bin','obj','__pycache__'}.intersection(path.relative_to(root/'bridge').parts))
 with zipfile.ZipFile(release / "ModLingo-source.zip", "w", zipfile.ZIP_DEFLATED) as archive:
     for path in sorted(set(files)):
         archive.write(path, "ModLingo/" + path.relative_to(root).as_posix())

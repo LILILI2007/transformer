@@ -17,7 +17,8 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from .core import Project, ProjectError, glossary_warnings, unsupported_reason, validate_translation
-from .provider import APIConfig, Translator, batches
+from .api_verification import APIVerification
+from .provider import APIConfig, Translator, batches, recover_batches
 from .theme import COLORS, FarmBanner, apply_theme, style_rows
 
 
@@ -34,7 +35,7 @@ def enable_dpi_awareness():
             pass
 
 
-class App:
+class App(APIVerification):
     def __init__(self, root):
         self.root = root
         self.root.title("ModLingo · 星露谷 mod 翻译工作台")
@@ -48,6 +49,8 @@ class App:
         self.project_path = None
         self.current_key = None
         self.visible_keys = []
+        self.page = 0
+        self.page_size = 200
         self.busy = False
         self.stop_event = threading.Event()
         self.events = queue.Queue()
@@ -57,7 +60,9 @@ class App:
         self.filter = tk.StringVar(value="全部")
         self.search = tk.StringVar()
         self.details = tk.StringVar(value="选择左侧条目，在右侧修改或确认译文。")
+        self.init_verification()
         self._build()
+        self.update_api_buttons()
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self.poll_id = self.root.after(100, self._poll)
 
@@ -71,11 +76,18 @@ class App:
         ttk.Label(header, text="单 mod 翻译工作台", font=("Microsoft YaHei UI", 12, 'bold')).pack(side="left")
         ttk.Button(header, text="API 设置", command=self.settings).pack(side="right")
         ttk.Label(wrapper, text="01 导入 mod    →    02 翻译与检查    →    03 确认变更    →    04 导出并安装", foreground=COLORS['muted']).pack(anchor="w", pady=(2, 18))
+        self.verification_row(wrapper)
         toolbar = ttk.Frame(wrapper)
         toolbar.pack(fill="x")
         for label, command in [("打开示例", self.sample), ("导入 mod", self.import_mod), ("载入更新", self.update_mod), ("打开项目", self.open_project), ("保存副本", self.save_copy), ("术语表", self.glossary_dialog)]:
             ttk.Button(toolbar, text=label, command=command).pack(side="left", padx=(0, 7))
         ttk.Label(wrapper, textvariable=self.summary, font=("Microsoft YaHei UI", 11, "bold")).pack(anchor="w", pady=(16, 9))
+        pages = ttk.Frame(wrapper)
+        pages.pack(fill="x")
+        ttk.Button(pages, text="上一页", command=lambda: self.change_page(-1)).pack(side="left")
+        ttk.Button(pages, text="下一页", command=lambda: self.change_page(1)).pack(side="left")
+        self.page_label = ttk.Label(pages, text="每页 200 条")
+        self.page_label.pack(side="left", padx=8)
         filters = ttk.Frame(wrapper)
         filters.pack(fill="x", pady=(0, 9))
         ttk.Label(filters, text="查看").pack(side="left")
@@ -137,7 +149,7 @@ class App:
         return True
 
     def _commit(self, force=False):
-        if not self.project or not self.current_key or self.busy:
+        if not self.project or not self.current_key or self.busy or self.current_key not in self.project.entries:
             return []
         entry = self.project.entries[self.current_key]
         value = self.target_text.get("1.0", "end-1c")
@@ -234,6 +246,7 @@ class App:
     def refresh(self):
         if not self.project:
             return
+        self.project.structured_support = True
         self._commit()
         selected = self.current_key
         self.current_key = None
@@ -242,10 +255,11 @@ class App:
         search = self.search.get().casefold()
         states = CounterStates(self.project)
         self.summary.set(f"{self.project.name}  ·  {self.project.version}    |    共 {len(self.project.entries)} 项  ·  可导出 {states['ready']}  ·  待处理 {states['todo']}  ·  原文回退 {states['fallback']}  ·  暂不支持 {states['unsupported']}")
+        matching = []
         for key, entry in self.project.entries.items():
-            status = entry.status()
+            status = display_status(self.project,entry)
             mode = self.filter.get()
-            if mode == "待翻译" and not entry.needs_translation():
+            if mode == "待翻译" and not editor_pending(entry):
                 continue
             if mode == "需要处理" and status not in ("待翻译", "更新待确认", "译文待确认", "检查失败"):
                 continue
@@ -257,6 +271,10 @@ class App:
                 continue
             if search and search not in (key + entry.source + entry.target).casefold():
                 continue
+            matching.append((key, entry, status))
+        self.page = max(0, min(self.page, max(0, (len(matching)-1)//self.page_size)))
+        self.page_label.configure(text="第 %d / %d 页 · 每页 200 条" % (self.page+1, max(1,(len(matching)+199)//200)))
+        for key, entry, status in matching[self.page*self.page_size:(self.page+1)*self.page_size]:
             index = str(len(self.visible_keys))
             self.visible_keys.append(key)
             tag = 'good' if status in ('可导出', '人工已确认') else 'failed' if status == '检查失败' else 'attention' if status in ('暂不支持', '更新待确认', '译文待确认') else 'even'
@@ -274,6 +292,11 @@ class App:
             self._set_text(self.target_text, "", disabled=self.busy)
             self.key_label.configure(text="没有匹配条目")
             self.details.set("")
+
+    def change_page(self, delta):
+        self._commit()
+        self.page = max(0, self.page + delta)
+        self.refresh()
 
     def _set_text(self, widget, value, disabled=False):
         widget.configure(state="normal")
@@ -321,39 +344,25 @@ class App:
         from .api_settings import APISettingsDialog
         def apply(config):
             self.config = config
-            self.status.set('API 配置已应用。密钥仅在内存中，关闭后需重新填写。')
+            self.invalidate_api()
+            self.status.set('API 设置已保存，请通过验证后再翻译。')
         self.api_dialog = APISettingsDialog(self.root, self.config, apply, self.test_connection)
 
     def _set_busy(self, busy):
         self.busy = busy
-        self.translate_button.configure(state="disabled" if busy else "normal")
+        self.update_api_buttons()
         self.confirm_button.configure(state="disabled" if busy else "normal")
         self.cancel_button.configure(state="normal" if busy else "disabled")
         self.target_text.configure(state="disabled" if busy else "normal")
 
     def test_connection(self):
-        if not messagebox.askyesno("测试连接", "将发送一条 Hello, farmer! 测试文本，可能产生少量费用。继续？", parent=self.root):
-            return
-        self.stop_event.clear()
-        self._set_busy(True)
-        config = replace(self.config)
-
-        def worker():
-            try:
-                Translator(config).translate([("connection-test", "Hello, farmer!")], {})
-                self.events.put(("test", "连接和响应格式检查通过；不代表全部 mod 文本的翻译质量。"))
-            except ProjectError as exc:
-                self.events.put(("test", str(exc)))
-            finally:
-                self.events.put(("done", None))
-
-        threading.Thread(target=worker, daemon=True).start()
+        self.begin_api_test(self._set_busy)
 
     def translate(self):
-        if not self.guard():
+        if not self.guard() or not self.require_verified_api():
             return
         self._commit()
-        items = [(key, entry.source) for key, entry in self.project.entries.items() if entry.needs_translation()]
+        items = [(key, entry.source) for key, entry in self.project.entries.items() if editor_pending(entry)]
         if not items:
             messagebox.showinfo("无需调用 API", "没有需要翻译的支持项。已有候选请人工确认；未变文本会直接复用。", parent=self.root)
             return
@@ -372,50 +381,50 @@ class App:
         config, glossary = replace(self.config), dict(self.project.glossary)
 
         def worker():
-            translator = Translator(config)
-            completed = 0
+            import asyncio
+            from .editor_work import translate_editor
+            from .batch import data_root
             try:
-                for batch in batches(items):
-                    if self.stop_event.is_set():
-                        break
-                    try:
-                        result = translator.translate(batch, glossary)
-                        self.events.put(("results", result))
-                    except ProjectError as exc:
-                        self.events.put(("errors", ([key for key, _ in batch], str(exc))))
-                        # Avoid charging every remaining batch for a bad config.
-                        break
-                    completed += len(batch)
-                    self.events.put(("progress", (completed, len(items))))
+                asyncio.run(translate_editor(items,self.project.mod_id,config,glossary,self.stop_event,data_root(),lambda kind,data:self.events.put((kind,data))))
+            except (ProjectError,OSError) as exc:
+                self.events.put(('errors',([key for key,_ in items],str(exc))))
             finally:
-                self.events.put(("done", None))
+                self.events.put(('done',None))
 
         self.status.set("正在请求大模型；可停止后续请求，当前请求会等待返回或超时。")
         threading.Thread(target=worker, daemon=True).start()
 
     def _poll(self):
         try:
-            while True:
+            import time
+            started = time.perf_counter()
+            for _ in range(50):
+                if time.perf_counter()-started > .008:
+                    break
                 kind, data = self.events.get_nowait()
                 if kind == "results":
                     for key, source, target in data:
                         self.project.accept_ai(key, source, target)
-                    self.checkpoint()
-                    self.refresh()
+                    for iid,key in enumerate(self.visible_keys):
+                        self.tree.set(str(iid),'state',display_status(self.project,self.project.entries[key]))
+                    if self.current_key in self.project.entries:
+                        self._set_text(self.target_text,self.project.entries[self.current_key].target,disabled=self.busy)
                 elif kind == "errors":
                     keys, error = data
                     for key in keys:
                         self.project.entries[key].error = error
-                    self.checkpoint()
-                    self.status.set("请求已停止：" + error + "。修正后可再次翻译，已有成功进度保留。")
+                    self.status.set("部分条目未完成：" + error + "。修正后可重试，已有成功进度保留。")
                     self.refresh()
                 elif kind == "progress":
                     self.progress.configure(value=data[0])
                     self.status.set(f"已处理 {data[0]} / {data[1]} 条。每批结果已自动保存。")
-                elif kind == "test":
-                    self.status.set(data)
+                elif kind == "editor_stats":
+                    self.status.set("并发翻译：请求中 %d · 等待重试 %d · 已发送 %d 次" % (data["in_flight"],data["waiting_retry"],data["requests"]))
+                elif kind == "api_test":
+                    self.finish_api_test(data)
                 elif kind == "done":
                     self._set_busy(False)
+                    self.checkpoint()
                     self.refresh()
                     self.status.set(self.status.get() + "  本次处理已结束。")
         except queue.Empty:
@@ -496,12 +505,33 @@ class App:
 
 
 def CounterStates(project):
-    statuses = [entry.status() for entry in project.entries.values()]
+    statuses = [display_status(project,entry) for entry in project.entries.values()]
     ready = sum(status in ("可导出", "人工已确认") for status in statuses)
     unsupported = statuses.count("暂不支持")
     fallback = statuses.count("原文回退")
     return {"ready": ready, "unsupported": unsupported, "fallback": fallback,
             "todo": len(statuses) - ready - unsupported - fallback}
+
+
+def editor_pending(entry):
+    from .syntax import spans,kind_for
+    if entry.origin=='manual' and not entry.target.strip():
+        return False
+    if not spans(entry.source,kind_for(entry.source))[0]:
+        return False
+    return entry.needs_translation() or bool(entry.error) or not entry.target or (entry.needs_review and entry.translated_source!=entry.source)
+
+
+def display_status(project,entry):
+    status=entry.status()
+    if status=='暂不支持' and project.structured_support:
+        from .syntax import spans,kind_for
+        if spans(entry.source,kind_for(entry.source))[0]:
+            if entry.error:return '检查失败'
+            if entry.needs_review:return '译文待确认'
+            if not entry.target:return '原文回退' if entry.origin=='manual' else '待翻译'
+            return '可导出' if not validate_translation(entry.source,entry.target) else '检查失败'
+    return status
 
 
 def main():
@@ -536,6 +566,23 @@ def main():
         for callback in root.tk.call('after', 'info'):
             root.after_cancel(callback)
         root.destroy()
+        from .workers import call_in_process, prepare_spool, read_spool
+        from .discovery import scan_mods
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            demo = asset_root() / 'examples' / 'DemoMod'
+            item = next(item for item in scan_mods(demo.parent) if Path(item.folder) == demo)
+            spool = Path(directory) / 'spool.jsonl'
+            result = call_in_process(prepare_spool,item,Path(directory)/'cache',spool,[])
+            assert read_spool(item,result).units
+        assert (asset_root()/'bridge'/'package'/'ModLingo.Bridge.dll').is_file()
+        # Exercise bundled async/TLS dependencies without sending any request.
+        import asyncio
+        from .async_provider import Session
+        async def pooled_startup():
+            async with Session(APIConfig('https://example.invalid/v1','smoke')):
+                pass
+        asyncio.run(pooled_startup())
         print("GUI smoke passed: Chinese UI, example import, entry selection and API settings; no network calls.")
     else:
         if args.editor:

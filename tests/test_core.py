@@ -11,6 +11,17 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class JSONCTests(unittest.TestCase):
+    def test_cp_numeric_properties_are_opt_in_and_keep_duplicate_validation(self):
+        source='{"Fields":{"103":{4:"Pam 350", 12: "text {4: literal}"}}, "values":[1,2]}'
+        with self.assertRaises(ProjectError):
+            parse_jsonc(source)
+        result=parse_jsonc(source,numeric_properties=True)
+        self.assertEqual(result['Fields']['103'],{'4':'Pam 350','12':'text {4: literal}'})
+        self.assertEqual(result['values'],[1,2])
+        for invalid in ('{4:"a","4":"b"}','{"list":[1,2:"bad"]}','{key:"unsupported"}'):
+            with self.assertRaises(ProjectError):
+                parse_jsonc(invalid,numeric_properties=True)
+
     def test_comments_and_trailing_commas_without_damaging_strings(self):
         data = parse_jsonc('\ufeff{ /* 文档 */ "url":"https://farm.test/a//b", "quote":"a\\\"//b", //注释\n"text":"/*literal*/ ,}", }')
         self.assertEqual(data["url"], "https://farm.test/a//b")
@@ -45,7 +56,7 @@ class ValidationTests(unittest.TestCase):
             self.assertTrue(validate_translation(source, target))
 
     def test_complex_grammar_is_not_claimed_supported(self):
-        for source in ["$q 1/2 Question?", "${male^female}$", "Hello [123]", "message#attachment", "{{outer: {{inner}}}}"]:
+        for source in ["$q 1/2 Question?", "${male^female}$", "Hello [unknown]", "message#attachment", "{{outer: {{inner}}}}"]:
             self.assertTrue(unsupported_reason(source))
 
     def test_newlines_are_checked(self):

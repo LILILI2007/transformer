@@ -28,7 +28,7 @@ def _unique_object(pairs):
     return result
 
 
-def parse_jsonc(text: str):
+def parse_jsonc(text: str, *, numeric_properties=False):
     """Strip comments/trailing commas with a lexer, preserving quoted content."""
     chars = list(text.lstrip("\ufeff"))
     i, quoted = 0, False
@@ -78,17 +78,46 @@ def parse_jsonc(text: str):
             if j < len(chars) and chars[j] in "}]":
                 chars[i] = " "
         i += 1
+    if numeric_properties:
+        # Newtonsoft accepts bare numeric field IDs (e.g. CP Fields: {4: ...}).
+        # Normalize only tokens outside strings, never values or player files.
+        i, quoted = 0, False
+        while i < len(chars):
+            char = chars[i]
+            if quoted:
+                if char == "\\":
+                    i += 2
+                    continue
+                if char == '"':
+                    quoted = False
+            elif char == '"':
+                quoted = True
+            elif char in "{,":
+                start = i + 1
+                while start < len(chars) and chars[start].isspace():
+                    start += 1
+                end = start
+                while end < len(chars) and chars[end] in "0123456789":
+                    end += 1
+                colon = end
+                while colon < len(chars) and chars[colon].isspace():
+                    colon += 1
+                if end > start and colon < len(chars) and chars[colon] == ":":
+                    chars[end:end] = ['"']
+                    chars[start:start] = ['"']
+                    i = end + 1
+            i += 1
     try:
         return json.loads("".join(chars), object_pairs_hook=_unique_object)
     except (ValueError, TypeError) as exc:
         raise ProjectError("JSON 格式错误：" + str(exc)) from exc
 
 
-def read_jsonc(path: Path):
+def read_jsonc(path: Path, *, numeric_properties=False):
     if path.stat().st_size > 20 * 1024 * 1024:
         raise ProjectError("单个文件超过 20 MB，首版暂不处理")
     try:
-        return parse_jsonc(path.read_text(encoding="utf-8-sig"))
+        return parse_jsonc(path.read_text(encoding="utf-8-sig"), numeric_properties=numeric_properties)
     except UnicodeError as exc:
         raise ProjectError("文件不是有效的 UTF-8 编码：" + path.name) from exc
 
@@ -104,22 +133,81 @@ def language_map(path: Path) -> Dict[str, str]:
     return data
 
 
-# Only a documented conservative subset is accepted. Complex game grammars
-# are NOT declared safe merely because token counts match.
-TOKEN = re.compile(r"\{\{[^{}\r\n]+\}\}|#\$[be]#|\$[0-5](?!\d)|\$[hsluna](?![A-Za-z0-9_])|%[A-Za-z_][A-Za-z0-9_]*|@")
+def locale_paths(folder, locale):
+    """SMAPI permits either top-level locale files or locale directories."""
+    i18n = Path(folder) / 'i18n'
+    for path in (i18n, i18n / locale):
+        if path.exists() and (path.is_symlink() or getattr(path.lstat(), 'st_file_attributes', 0) & 0x400):
+            raise ProjectError('语言目录使用链接或目录联接，已拒绝')
+    if not i18n.exists():
+        return []
+    if any(i18n.glob('*.json')) and any(p.is_dir() and any(p.glob('*.json')) for p in i18n.iterdir()):
+        raise ProjectError('语言目录混用了平铺文件和分文件目录，SMAPI 不支持此布局')
+    directory = i18n / locale
+    if directory.is_dir():
+        if any(p.is_dir() for p in directory.iterdir()):
+            raise ProjectError('语言目录含多层子目录，暂不处理')
+        paths = sorted(directory.glob('*.json'))
+    else:
+        path = i18n / (locale + '.json')
+        paths = [path] if path.is_file() else []
+    if len(paths) > 2048 or sum(p.stat().st_size for p in paths) > 40 * 1024 * 1024:
+        raise ProjectError('语言目录超过文件数量或总大小限制')
+    for path in paths:
+        if path.is_symlink() or getattr(path.lstat(), 'st_file_attributes', 0) & 0x400:
+            raise ProjectError('语言文件使用链接或目录联接，已拒绝')
+    return paths
 
 
-def unsupported_reason(source: str) -> str:
+def merge_language_files(paths):
+    result, seen = {}, set()
+    for path in paths:
+        for key, value in language_map(path).items():
+            if key.casefold() in seen:
+                raise ProjectError('分文件语言目录存在重复键：' + key)
+            seen.add(key.casefold())
+            result[key] = value
+    return result
+
+
+def translation_target(folder):
+    i18n = Path(folder) / 'i18n'
+    return i18n / 'zh' / 'ModLingo.generated.json' if (i18n / 'default').is_dir() else i18n / 'zh.json'
+
+
+# Protect common formatting, while leaving commands and nested grammar blocked.
+TOKEN = re.compile(r"\{\{[^{}\r\n]+\}\}|\{\d+(?:,[+-]?\d+)?(?::[^{}\r\n]+)?\}|#\$[be]#|\$\d+(?!\d)|\$[hsluna](?![A-Za-z0-9_])|%[A-Za-z_][A-Za-z0-9_]*|\[\d+(?:\s+\d+)*\s*\]|[@/^#%|~]|\r?\n")
+MASK_TOKEN = re.compile(r'\$query\b[^#\r\n]*#|\$action\b(?:"(?:\\.|[^"\\\r\n])*"|[^"#|\r\n])*|\$(?:q|r|p|c|d|t)\b[^#\r\n]*#|'+TOKEN.pattern)
+
+
+def _unsupported_reason(source: str) -> str:
+    if re.search(r'(?:^|[/\\])\s*(?:quickQuestion\b|textAboveHead\b|end\s+dialogue(?:WarpOut)?(?:\s|$))',source):
+        return '含快速问答、头顶气泡或结束对白，需结构化翻译'
     residual = TOKEN.sub("", source)
-    if any(char in residual for char in ("{", "}", "$", "#", "^", "[", "]", "/", "%")):
+    if '/' in source and re.search(r'(?:^|/)\s*(?:(?:speak|message|pause|warp|faceDirection|move|animate|skippable|end|playMusic|stopMusic|viewport|positionOffset|addItem|friendship|emote|globalFade|fade|question|quickQuestion)\b|farmer\s+-?\d)', source):
+        return '含事件命令序列，暂不自动改写脚本'
+    if re.search(r'#(?:attachment|action|reply|conversation|item|money|recipe|quest|autoOpen|title|image)\b', source):
+        return '含邮件命令或附件语法，暂不自动翻译'
+    if any(char in residual for char in ("{", "}", "$", "[", "]")):
         return "含复杂或未知控制语法，首版不自动翻译或导出此项"
     if len(source) > 16000:
         return "单条文本超过 16000 字符，首版暂不处理"
     return ""
 
 
+def unsupported_reason(source: str) -> str:
+    return _unsupported_reason(source)
+
+
 def validate_translation(source: str, target: str) -> List[str]:
     issues = []
+    if _unsupported_reason(source):
+        from .syntax import spans, validate_rebuilt, kind_for
+        kind = kind_for(source)
+        parts, _ = spans(source, kind)
+        if parts and target.strip() and validate_rebuilt(source, target, kind):
+            return []
+        return ['复杂文本的非文字结构发生变化或尚无可处理片段']
     if unsupported_reason(source):
         issues.append(unsupported_reason(source))
     if not target.strip():
@@ -173,6 +261,8 @@ class Entry:
             return True
         if self.origin == "manual" and not self.target.strip():
             return False
+        if self.origin != 'manual' and (self.error or (self.target and validate_translation(self.source, self.target))):
+            return True
         return not self.target.strip()
 
 
@@ -193,6 +283,9 @@ class Project:
     retired: Dict[str, dict] = field(default_factory=dict)
     glossary: Dict[str, str] = field(default_factory=dict)
     notices: List[str] = field(default_factory=list)
+    language_layout: str = 'flat'
+    external_chinese_keys: List[str] = field(default_factory=list)
+    structured_support: bool = False
 
     @classmethod
     def from_mod(cls, folder: Path) -> Project:
@@ -204,14 +297,19 @@ class Project:
         if not isinstance(manifest, dict) or not isinstance(manifest.get("UniqueID"), str) or not manifest["UniqueID"].strip():
             raise ProjectError("manifest.json 缺少有效的 UniqueID")
         i18n = folder / "i18n"
-        if (i18n / "default").is_dir() or (i18n / "zh").is_dir():
-            raise ProjectError("检测到分文件语言目录；首版仅支持 default.json / zh.json 平铺布局")
-        if not (i18n / "default.json").is_file():
+        source_paths = locale_paths(folder, 'default')
+        if not source_paths:
+            if (i18n / 'default').is_dir():
+                raise ProjectError('分文件语言目录没有可读取的 JSON 文件')
             raise ProjectError("没有 i18n/default.json；首版不提取 content.json、DLL 或 XNB 的硬编码文本")
-        source = language_map(i18n / "default.json")
-        chinese = language_map(i18n / "zh.json") if (i18n / "zh.json").is_file() else {}
+        source = merge_language_files(source_paths)
+        chinese_paths = locale_paths(folder, 'zh')
+        chinese = merge_language_files(chinese_paths)
         folded = {key.casefold(): value for key, value in chinese.items()}
         project = cls(manifest["UniqueID"], str(manifest.get("Name", folder.name)), safe_folder(folder.name), str(manifest.get("Version", "")))
+        project.language_layout = 'split' if (i18n / 'default').is_dir() else 'flat'
+        if project.language_layout == 'split':
+            project.external_chinese_keys = list(merge_language_files([p for p in chinese_paths if p.name.casefold() != 'modlingo.generated.json']))
         for key, value in source.items():
             target = folded.get(key.casefold(), "")
             project.entries[key] = Entry(value, target, "imported" if target else "", value if target else "")
@@ -248,6 +346,7 @@ class Project:
             self.retired[key] = {**asdict(previous), "reason": "更新后原文删除此键"}
         self.entries = result
         self.version, self.folder, self.name = incoming.version, incoming.folder, incoming.name
+        self.language_layout, self.external_chinese_keys = incoming.language_layout, incoming.external_chinese_keys
         self.notices = ["更新已比对：未变项保留，变更项需确认，新增项待翻译，删除项已归档。"]
 
     def edit(self, key: str, target: str):
@@ -290,6 +389,10 @@ class Project:
             obj = data["project"]
             entries = {key: Entry(**entry) for key, entry in obj.pop("entries").items()}
             project = cls(entries=entries, **obj)
+            if type(project.structured_support) is not bool:
+                raise ProjectError('结构化文本开关无效')
+            if project.language_layout not in ('flat', 'split') or not isinstance(project.external_chinese_keys, list) or not all(isinstance(k, str) for k in project.external_chinese_keys):
+                raise ProjectError('项目语言布局无效')
             string_fields = ("source", "target", "origin", "translated_source", "previous_source", "previous_target", "error")
             if not all(isinstance(key, str) and all(isinstance(getattr(e, attr), str) for attr in string_fields)
                        and isinstance(e.needs_review, bool) for key, e in entries.items()):
@@ -308,12 +411,18 @@ class Project:
             raise ProjectError("项目文件结构无效") from exc
 
     def export_zip(self, path: Path):
+        from .syntax import spans, kind_for
         path = Path(path)
         if path.suffix.casefold() != ".zip":
             raise ProjectError("翻译包必须保存为 .zip，不能覆盖 JSON 语言文件")
         translations, skipped, blockers = {}, [], []
+        external = {k.casefold() for k in self.external_chinese_keys}
         for key, entry in self.entries.items():
-            if unsupported_reason(entry.source):
+            if key.casefold() in external:
+                if entry.origin != 'imported':
+                    blockers.append(key + '：分文件目录的已有中文需在原文件中编辑，避免重复键')
+                continue
+            if unsupported_reason(entry.source) and not (self.structured_support and spans(entry.source,kind_for(entry.source))[0]):
                 skipped.append({"key": key, "reason": unsupported_reason(entry.source)})
                 continue
             if entry.needs_review:
@@ -337,14 +446,15 @@ class Project:
         folder = safe_folder(self.folder)
         report = {"mod_id": self.mod_id, "mod_version": self.version, "language": "zh", "exported": len(translations), "skipped": skipped,
                   "retired_count": len(self.retired), "verified_in_game": False}
-        instructions = f"ModLingo 翻译包\n\n目标 mod：{self.name}\nUniqueID：{self.mod_id}\n版本：{self.version}\n\n1. 退出游戏。找到 Mods 中 UniqueID 与上述一致的原 mod 文件夹；文件夹名可以不同。\n2. 如已有 i18n/zh.json，先复制到别处备份。此包会替换整个 zh.json。\n3. 将本包 {folder}/i18n/zh.json 复制到该原 mod 的 i18n 文件夹。不要把翻译包当作独立 mod 安装。\n4. 在游戏中选择中文并启动 SMAPI，检查物品名、界面和相关对话。\n5. 恢复时复制回备份；原先没有中文文件，则删除本次添加的 zh.json。\n\n导出 {len(translations)} 项，跳过 {len(skipped)} 项；跳过项使用默认语言回退。详细情况见 export-report.json。\n首版不支持复杂事件/未知控制语法。结构检查通过不等于实机验证或译文含义正确。\n"
+        relative = 'i18n/zh/ModLingo.generated.json' if self.language_layout == 'split' else 'i18n/zh.json'
+        instructions = f'ModLingo 翻译包\n目标：{self.name} / {self.mod_id}\n退出游戏，备份原文件后，将 {folder}/{relative} 复制到原 mod 的对应路径。不要当作独立 mod 安装。\n分文件目录保留其他中文文件，只补充缺少的键。恢复时复制回备份，原先没有此文件则删除新文件。\n导出 {len(translations)} 项，跳过 {len(skipped)} 项。结构检查不等于实机验收。\n'
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         handle, temp = tempfile.mkstemp(dir=str(path.parent), suffix=".zip.tmp")
         os.close(handle)
         try:
             with zipfile.ZipFile(temp, "w", zipfile.ZIP_DEFLATED) as archive:
-                archive.writestr(folder + "/i18n/zh.json", json.dumps(translations, ensure_ascii=False, indent=2))
+                archive.writestr(folder + '/' + relative, json.dumps(translations, ensure_ascii=False, indent=2))
                 archive.writestr("安装说明.txt", instructions)
                 archive.writestr("export-report.json", json.dumps(report, ensure_ascii=False, indent=2))
             os.replace(temp, path)

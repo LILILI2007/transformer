@@ -1,0 +1,152 @@
+[
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Pam",
+    "target": "潘姆"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Penny",
+    "target": "潘妮"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/AddTextOption/name",
+    "source": "QuestLetterFrom",
+    "target": "任务来信寄件人"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/runtime/SimpleModOption/name/QuestLetterFrom",
+    "source": "QuestLetterFrom",
+    "target": "任务来信寄件人"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/runtime/ChoiceModOption/name/QuestLetterFrom",
+    "source": "QuestLetterFrom",
+    "target": "任务来信寄件人"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/AddBoolOption/name",
+    "source": "DebugMode_ForceNewQuestLetter",
+    "target": "调试：强制发送新的任务来信"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/runtime/SimpleModOption/name/DebugMode_ForceNewQuestLetter",
+    "source": "DebugMode_ForceNewQuestLetter",
+    "target": "调试：强制发送新的任务来信"
+  },
+  {
+    "mod_id": "recon88.NoPamEnabling",
+    "context": "gmcm/runtime/ChoiceModOption/name/DebugMode_ForceNewQuestLetter",
+    "source": "DebugMode_ForceNewQuestLetter",
+    "target": "调试：强制发送新的任务来信"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/AddSectionTitle/text",
+    "source": "Mod Section Toggles",
+    "target": "模组分类开关"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/runtime/SectionTitleModOption/name",
+    "source": "Mod Section Toggles",
+    "target": "模组分类开关"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/AddBoolOption/name",
+    "source": "Vanilla",
+    "target": "原版内容"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/runtime/SimpleModOption/name/Vanilla",
+    "source": "Vanilla",
+    "target": "原版内容"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "jibb.Farm",
+    "target": "农场"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Bus",
+    "target": "巴士站"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Town",
+    "target": "鹈鹕镇"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "jibb.CommunityCenter",
+    "target": "社区中心"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Mines",
+    "target": "矿井"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Quarry",
+    "target": "采石场"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "jibb.Railroad",
+    "target": "铁路"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "jibb.Desert",
+    "target": "沙漠"
+  },
+  {
+    "mod_id": "jibb.minecarts",
+    "context": "gmcm/AddTextOption/formatAllowedValue",
+    "source": "Unused",
+    "target": "未使用"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/AddSectionTitle/text",
+    "source": "Style Options",
+    "target": "样式设置"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/runtime/SectionTitleModOption/name",
+    "source": "Style Options",
+    "target": "样式设置"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/AddSectionTitle/text",
+    "source": "Global Toggles",
+    "target": "全局开关"
+  },
+  {
+    "mod_id": "7eventy7.StandardizedSeedSprites",
+    "context": "gmcm/runtime/SectionTitleModOption/name",
+    "source": "Global Toggles",
+    "target": "全局开关"
+  }
+]

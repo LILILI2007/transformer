@@ -16,3 +16,10 @@ local-projects/
 artifacts/*.json
 artifacts/*.zip
 artifacts/qa-*.png
+artifacts/bridge-probe-*/
+artifacts/coverage-*.csv
+artifacts/coverage-*.md
+artifacts/*reference.txt
+bridge/**/bin/
+bridge/**/obj/
+*.egg-info/

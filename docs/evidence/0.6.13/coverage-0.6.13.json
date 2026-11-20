@@ -1,0 +1,2174 @@
+{
+  "schema_version": 3,
+  "version": "0.6.13",
+  "created": "2026-10-22T00:44:55.964841+08:00",
+  "mods": 122,
+  "mode": "offline_existing_cache_copy_only",
+  "requests": 0,
+  "player_files_changed": [],
+  "elapsed_seconds": 235.172,
+  "timings": {
+    "scan_prepare_seconds": 88.53200000000652,
+    "planning_seconds": 28.79700000002049,
+    "confirmation_wait_seconds": 0,
+    "network_seconds": 0.0,
+    "validation_seconds": 0,
+    "cache_write_seconds": 0,
+    "install_seconds": 100.20299999997951
+  },
+  "counts": {
+    "成功": 43,
+    "文件异常": 2,
+    "部分完成": 63,
+    "需进游戏采集": 1,
+    "待确认": 8,
+    "无需翻译": 5
+  },
+  "rows": [
+    {
+      "mod_id": "IMS.CP.MarnieDeservesBetter",
+      "name": "[CP] Marnie Deserves Better",
+      "status": "成功",
+      "completed_records": 10,
+      "total_records": 10,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 10,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "asset": 10
+      },
+      "runtime_verified": false,
+      "quality_review_items": 5,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 10/10 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 10 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedClothes",
+      "name": "Animated Clothes",
+      "status": "成功",
+      "completed_records": 67,
+      "total_records": 67,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 67,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 66,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 67/67 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 67 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedESFish",
+      "name": "Animated East Scarp Fish",
+      "status": "成功",
+      "completed_records": 12,
+      "total_records": 12,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 12,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 11,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 12/12 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 12 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedFish",
+      "name": "Animated Fish",
+      "status": "成功",
+      "completed_records": 92,
+      "total_records": 92,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 92,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 91,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 92/92 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 92 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedFishSVE",
+      "name": "Animated Fish SVE",
+      "status": "成功",
+      "completed_records": 31,
+      "total_records": 31,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 31,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 30,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 31/31 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 31 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedFood",
+      "name": "Animated Food and Drinks",
+      "status": "成功",
+      "completed_records": 93,
+      "total_records": 93,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 93,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 92,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 93/93 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 93 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedFurnitureAndStuff",
+      "name": "Animated Furniture and Stuff",
+      "status": "成功",
+      "completed_records": 62,
+      "total_records": 62,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 62,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 60,
+        "gmcm": 2
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 62/62 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 62 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedRSVFish",
+      "name": "Animated Ridgeside Village Fish",
+      "status": "成功",
+      "completed_records": 53,
+      "total_records": 53,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 53,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 49,
+        "gmcm": 4
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 53/53 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 53 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Gervig91.AnimatedSlimeEggandLoot",
+      "name": "Animated Slime Eggs and Loot",
+      "status": "成功",
+      "completed_records": 24,
+      "total_records": 24,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 24,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 23,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 24/24 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 24 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Undare.AnimatedGemstones",
+      "name": "AnimatedGemstones",
+      "status": "成功",
+      "completed_records": 280,
+      "total_records": 280,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 280,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 279,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 280/280 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 280 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Pathoschild.Automate",
+      "name": "Automate",
+      "status": "成功",
+      "completed_records": 53,
+      "total_records": 53,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 53,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 52,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 13,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 53/53 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 53 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "dylanjames.alwaysactive",
+      "name": "Better Always Active",
+      "status": "成功",
+      "completed_records": 3,
+      "total_records": 3,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 3,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 2,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 3/3 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 3 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mouahrara.BuildableGingerIslandFarm",
+      "name": "Buildable Ginger Island Farm",
+      "status": "成功",
+      "completed_records": 8,
+      "total_records": 8,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 8,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 7,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 8/8 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 8 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Pathoschild.ChestsAnywhere",
+      "name": "Chests Anywhere",
+      "status": "成功",
+      "completed_records": 86,
+      "total_records": 86,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 86,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 85,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 5,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 86/86 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 86 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "gaussfire.ConvenientInventory",
+      "name": "Convenient Inventory",
+      "status": "成功",
+      "completed_records": 124,
+      "total_records": 124,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 124,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 123,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 7,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 124/124 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 124 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DaisyNiko.Tilesheets",
+      "name": "DaisyNiko's Tilesheets",
+      "status": "成功",
+      "completed_records": 18,
+      "total_records": 18,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 18,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 17,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 18/18 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 18 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "MolsonCAD.DeluxeJournal",
+      "name": "Deluxe Journal",
+      "status": "成功",
+      "completed_records": 67,
+      "total_records": 67,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 67,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 66,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 4,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 67/67 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 67 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "PeacefulEnd.DynamicReflections",
+      "name": "Dynamic Reflections",
+      "status": "成功",
+      "completed_records": 99,
+      "total_records": 99,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 99,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 98,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 13,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 99/99 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 99 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "ES.BarberShop",
+      "name": "East Scarp: Barber Shop",
+      "status": "成功",
+      "completed_records": 5,
+      "total_records": 5,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 5,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 4,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 5/5 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 5 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "atravita.EastScarp",
+      "name": "East Scarp: C#",
+      "status": "成功",
+      "completed_records": 2,
+      "total_records": 2,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 2,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 1,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 2/2 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 2 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "atravita.NovaNPCTest",
+      "name": "Eli and Dylan Code",
+      "status": "成功",
+      "completed_records": 3,
+      "total_records": 3,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 3,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 2,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 3/3 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 3 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "spacechase0.GenericModConfigMenu",
+      "name": "Generic Mod Config Menu",
+      "status": "成功",
+      "completed_records": 21,
+      "total_records": 21,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 21,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 17,
+        "gmcm": 1,
+        "draw": 3
+      },
+      "runtime_verified": false,
+      "quality_review_items": 3,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 21/21 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 21 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mistyspring.ItemExtensions",
+      "name": "Item extensions",
+      "status": "成功",
+      "completed_records": 26,
+      "total_records": 26,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 26,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 25,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 26/26 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 26 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DecidedlyHuman.MappingExtensionsAndExtraProperties",
+      "name": "Mapping Extensions and Extra Properties (MEEP)",
+      "status": "成功",
+      "completed_records": 2,
+      "total_records": 2,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 2,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 1,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 2/2 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 2 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "recon88.MultiSave",
+      "name": "MultiSave - Continued",
+      "status": "成功",
+      "completed_records": 11,
+      "total_records": 11,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 11,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 10,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 11/11 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 11 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Bouhm.NPCMapLocations",
+      "name": "NPC Map Locations",
+      "status": "成功",
+      "completed_records": 80,
+      "total_records": 80,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 80,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 79,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 33,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 80/80 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 80 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "YunHikari.PredictReactionToGift",
+      "name": "PredictReactionToGift",
+      "status": "成功",
+      "completed_records": 15,
+      "total_records": 15,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 15,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 14,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 2,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 15/15 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 15 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "aedenthorn.QuestHelper",
+      "name": "Quest Helper",
+      "status": "成功",
+      "completed_records": 20,
+      "total_records": 20,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 20,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 19,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 20/20 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 20 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mouahrara.RelocateBuildingsAndFarmAnimals",
+      "name": "Relocate Buildings And Farm Animals",
+      "status": "成功",
+      "completed_records": 4,
+      "total_records": 4,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 4,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 3,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 4/4 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 4 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Rafseazz.RSVCC",
+      "name": "Ridgeside Village [Custom Companions component]",
+      "status": "成功",
+      "completed_records": 25,
+      "total_records": 25,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 25,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 25
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 25/25 个文本记录；游戏内生效待验证；已安装 25 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Poltergeister.SeasonalCuteCharacters",
+      "name": "Seasonal Cute Characters",
+      "status": "成功",
+      "completed_records": 194,
+      "total_records": 194,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 194,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 193,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 28,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 194/194 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 194 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Poltergeister.SeasonalCuteSpritesES",
+      "name": "Seasonal Cute Characters ES",
+      "status": "成功",
+      "completed_records": 18,
+      "total_records": 18,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 18,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 17,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 18/18 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 18 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Poltergeister.SeasonalCuteSpritesSVE",
+      "name": "Seasonal Cute Characters SVE",
+      "status": "成功",
+      "completed_records": 26,
+      "total_records": 26,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 26,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 25,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 26/26 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 26 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "JennaJuffuffles.SignLock",
+      "name": "Sign Lock",
+      "status": "成功",
+      "completed_records": 3,
+      "total_records": 3,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 3,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 2,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 3/3 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 3 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "dylanjames.sittingrestoresenergy",
+      "name": "Sitting Restores Energy",
+      "status": "成功",
+      "completed_records": 14,
+      "total_records": 14,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 14,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 13,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 14/14 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 14 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "dylanjames.smallmods",
+      "name": "Small Mods For Collections",
+      "status": "成功",
+      "completed_records": 33,
+      "total_records": 33,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 33,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 32,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 7,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 33/33 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 33 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "FlyingTNT.SocialPageOrderRedux",
+      "name": "Social Page Order Redux",
+      "status": "成功",
+      "completed_records": 38,
+      "total_records": 38,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 38,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 37,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 12,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 38/38 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 38 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "spacechase0.SpaceCore",
+      "name": "SpaceCore",
+      "status": "成功",
+      "completed_records": 18,
+      "total_records": 18,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 18,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 17,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 3,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 18/18 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 18 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "FlashShifter.SVECode",
+      "name": "Stardew Valley Expanded",
+      "status": "成功",
+      "completed_records": 25,
+      "total_records": 25,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 25,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 24,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 12,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 25/25 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 25 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "focustense.StardewUI",
+      "name": "StardewUI",
+      "status": "成功",
+      "completed_records": 2,
+      "total_records": 2,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 2,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 1,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 2/2 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 2 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mushymato.TrinketTinker",
+      "name": "TrinketTinker",
+      "status": "成功",
+      "completed_records": 23,
+      "total_records": 23,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 23,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 22,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 9,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 23/23 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 23 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DazUki.UIInfoSuite2Alt",
+      "name": "UI Info Suite 2 Alternative",
+      "status": "成功",
+      "completed_records": 301,
+      "total_records": 301,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 301,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 300,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 46,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 301/301 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 301 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DLX.Bundles",
+      "name": "Unlockable Bundles",
+      "status": "成功",
+      "completed_records": 19,
+      "total_records": 19,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 19,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 11,
+        "gmcm": 8
+      },
+      "runtime_verified": false,
+      "quality_review_items": 5,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 19/19 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 19 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "",
+      "name": "Console Commands",
+      "status": "文件异常",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "manifest.json 缺少有效的 UniqueID"
+    },
+    {
+      "mod_id": "",
+      "name": "Save Backup",
+      "status": "文件异常",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "manifest.json 缺少有效的 UniqueID"
+    },
+    {
+      "mod_id": "joiinks.IFixedHim",
+      "name": "(CP) I Fixed Him - Shane Dialogue Consistency",
+      "status": "部分完成",
+      "completed_records": 48,
+      "total_records": 48,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 48,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 21,
+        "asset": 23,
+        "gmcm": 4
+      },
+      "runtime_verified": false,
+      "quality_review_items": 3,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 48/48 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 48 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Tikamin557.CP.AdditionalFarmCave",
+      "name": "[CP] Additional Farm Cave",
+      "status": "部分完成",
+      "completed_records": 69,
+      "total_records": 69,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 69,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 43,
+        "gmcm": 26
+      },
+      "runtime_verified": false,
+      "quality_review_items": 6,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 69/69 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 69 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "SoftPandaBoi.ClintReforged",
+      "name": "[CP] Clint Reforged",
+      "status": "部分完成",
+      "completed_records": 286,
+      "total_records": 286,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 282,
+      "pending_capture_fields": 2,
+      "by_adapter": {
+        "i18n": 282,
+        "asset": 2,
+        "gmcm": 2
+      },
+      "runtime_verified": false,
+      "quality_review_items": 13,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 286/286 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 2 个混合 i18n 字段待游戏采集/条件版本验收；已安装 282 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "dylanjames.skiporsocialize.cp",
+      "name": "[CP] Skip or Socialize",
+      "status": "部分完成",
+      "completed_records": 49,
+      "total_records": 49,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 48,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 26,
+        "gmcm": 23
+      },
+      "runtime_verified": false,
+      "quality_review_items": 8,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 49/49 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 48 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Yagisan.NPCMapLocationsForNPCs",
+      "name": "[CP] Yagisan - Custom NPCs for NPC Map Locations",
+      "status": "需进游戏采集",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "未识别数据资源需游戏采集：Mods/Bouhm.NPCMapLocations/NPCs；引用文件未解析，保留原文件：data\\es.json · JSON 格式错误：存在重复或仅大小写不同的键：HasSeenEvent；引用文件未解析，保留原文件：data\\juna.json · JSON 格式错误：存在重复或仅大小写不同的键：HasSeenEvent"
+    },
+    {
+      "mod_id": "Tikamin557.FTM.AdditionalFarmCave",
+      "name": "[FTM] Additional Farm Cave",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "TheFrenchDodo.RodneyOBrien",
+      "name": "[NPC] Rodney O'Brien",
+      "status": "部分完成",
+      "completed_records": 31,
+      "total_records": 31,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 20,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "asset": 23,
+        "gmcm": 8
+      },
+      "runtime_verified": false,
+      "quality_review_items": 10,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 31/31 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 20 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Inmognito.BerryCalendar",
+      "name": "Add Berry Seasons to Calendar",
+      "status": "无需翻译",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "确认仅图像或非文本数据，无需请求 API"
+    },
+    {
+      "mod_id": "greentodd.CalendarAnniversary",
+      "name": "Anniversary on Calendar",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "leclair.bettercrafting",
+      "name": "Better Crafting",
+      "status": "部分完成",
+      "completed_records": 328,
+      "total_records": 329,
+      "extracted_coverage": 0.99696,
+      "installed_in_copy": 328,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 321,
+        "gmcm": 8
+      },
+      "runtime_verified": false,
+      "quality_review_items": 37,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 328/329 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 328 条；未验证；待处理 1 个文本记录"
+    },
+    {
+      "mod_id": "Spiderbuttons.BETAS",
+      "name": "Button's Extra Trigger Action Stuff",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "LemurKat.CommunityCenter.CP",
+      "name": "Community Center",
+      "status": "部分完成",
+      "completed_records": 458,
+      "total_records": 458,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 458,
+      "pending_capture_fields": 1,
+      "by_adapter": {
+        "i18n": 457,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 32,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 458/458 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 1 个混合 i18n 字段待游戏采集/条件版本验收；已安装 458 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Pathoschild.ContentPatcher",
+      "name": "Content Patcher",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "spacechase0.ContentPatcherAnimations",
+      "name": "Content Patcher Animations",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "PeacefulEnd.CustomCompanions",
+      "name": "Custom Companions",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "JennaJuffuffles.CustomSlimeShed",
+      "name": "Customizable Slime Hutch",
+      "status": "部分完成",
+      "completed_records": 25,
+      "total_records": 25,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 25,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 23,
+        "gmcm": 2
+      },
+      "runtime_verified": false,
+      "quality_review_items": 4,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 25/25 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 25 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "jennajuffuffles.CuterSlimesRefreshed",
+      "name": "Cuter Slimes Refreshed",
+      "status": "部分完成",
+      "completed_records": 5,
+      "total_records": 5,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 5,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 4,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 5/5 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 5 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DH.Kiyuga.Main",
+      "name": "Downhill Project",
+      "status": "部分完成",
+      "completed_records": 38,
+      "total_records": 38,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 38,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 37,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 38/38 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 38 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DH.Kiyuga.Extras",
+      "name": "Downhill Project Extras",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "DH.Kiyuga.Characters",
+      "name": "Downhill Project NPCs",
+      "status": "部分完成",
+      "completed_records": 528,
+      "total_records": 528,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 527,
+      "pending_capture_fields": 4,
+      "by_adapter": {
+        "i18n": 521,
+        "asset": 7
+      },
+      "runtime_verified": false,
+      "quality_review_items": 5,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 528/528 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 4 个混合 i18n 字段待游戏采集/条件版本验收；已安装 527 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "LemurKat.EastScarpe.CP",
+      "name": "East Scarp TileSheet Fixes",
+      "status": "无需翻译",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "确认仅图像或非文本数据，无需请求 API"
+    },
+    {
+      "mod_id": "Lemurkat.EastScarp",
+      "name": "East Scarp: Locations",
+      "status": "部分完成",
+      "completed_records": 913,
+      "total_records": 913,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 913,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 738,
+        "gmcm": 1,
+        "asset": 174
+      },
+      "runtime_verified": false,
+      "quality_review_items": 31,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 913/913 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 913 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Lemurkat.EastScarpNPCs",
+      "name": "East Scarp: NPCs",
+      "status": "部分完成",
+      "completed_records": 11204,
+      "total_records": 11221,
+      "extracted_coverage": 0.99848,
+      "installed_in_copy": 11100,
+      "pending_capture_fields": 85,
+      "by_adapter": {
+        "i18n": 11045,
+        "asset": 175,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 740,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 11204/11221 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 85 个混合 i18n 字段待游戏采集/条件版本验收；已安装 11100 条；未验证；待处理 17 个文本记录"
+    },
+    {
+      "mod_id": "TenebrousNova.EliDylan.CP",
+      "name": "Eli & Dylan",
+      "status": "部分完成",
+      "completed_records": 2950,
+      "total_records": 2956,
+      "extracted_coverage": 0.99797,
+      "installed_in_copy": 2868,
+      "pending_capture_fields": 30,
+      "by_adapter": {
+        "i18n": 2926,
+        "asset": 29,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 582,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 2950/2956 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 30 个混合 i18n 字段待游戏采集/条件版本验收；已安装 2868 条；未验证；待处理 6 个文本记录"
+    },
+    {
+      "mod_id": "TenebrousNova.EliDylanCC",
+      "name": "Eli & Dylan- Soot",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "TheMightyAmondee.EventLimiter",
+      "name": "Event Limiter",
+      "status": "部分完成",
+      "completed_records": 11,
+      "total_records": 11,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 11,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 11
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 11/11 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 11 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Esca.FarmTypeManager",
+      "name": "Farm Type Manager (FTM)",
+      "status": "部分完成",
+      "completed_records": 11,
+      "total_records": 11,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 11,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 10,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 6,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 11/11 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 11 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "gaussfire.FasterPathSpeed",
+      "name": "Faster Path Speed",
+      "status": "部分完成",
+      "completed_records": 16,
+      "total_records": 16,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 16,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 16
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 16/16 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 16 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Becks723.FontSettings",
+      "name": "Font Settings",
+      "status": "部分完成",
+      "completed_records": 115,
+      "total_records": 115,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 115,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 114,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 14,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 115/115 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 115 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Lemurkat.EastScarpe.FTM",
+      "name": "Forage Settings East Scarp",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "IsaacS.FriendsForever",
+      "name": "Friends Forever",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "flashshifter.FrontierFarm",
+      "name": "Frontier Farm",
+      "status": "部分完成",
+      "completed_records": 101,
+      "total_records": 101,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 81,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 80,
+        "asset": 20,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 21,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 101/101 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 81 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "FlashShifter.FrontierFarmFTM",
+      "name": "Frontier Farm Forage Locations",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "mistyspring.GiEXredux",
+      "name": "GI Extra locations - ContentPatcher",
+      "status": "部分完成",
+      "completed_records": 818,
+      "total_records": 818,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 795,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 793,
+        "asset": 25
+      },
+      "runtime_verified": false,
+      "quality_review_items": 38,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 818/818 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 795 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mistyspring.GiEXreduxFTM",
+      "name": "GI Extra locations - FarmTypeManager",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "mistyspring.GiEXredux.code",
+      "name": "Ginger Island Extra Locations - redux",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "hxw.tilesheets",
+      "name": "HxW Tilesheets",
+      "status": "无需翻译",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "确认仅图像或非文本数据，无需请求 API"
+    },
+    {
+      "mod_id": "jibb.minecarts",
+      "name": "Integrated Minecarts (CP Component)",
+      "status": "部分完成",
+      "completed_records": 17384,
+      "total_records": 23551,
+      "extracted_coverage": 0.73814,
+      "installed_in_copy": 17384,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 23385,
+        "gmcm": 166
+      },
+      "runtime_verified": false,
+      "quality_review_items": 8807,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 17384/23551 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 17384 条；未验证；待处理 6167 个文本记录"
+    },
+    {
+      "mod_id": "jibb.minecarts.C",
+      "name": "Integrated Minecarts (SMAPI Component)",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Cabbose.Sage.TimeMaster.ItsStardewTime",
+      "name": "ItsStardewTime",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "ZoeDoll.NPCLeilani",
+      "name": "Leilani",
+      "status": "部分完成",
+      "completed_records": 187,
+      "total_records": 189,
+      "extracted_coverage": 0.98942,
+      "installed_in_copy": 186,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 185,
+        "asset": 3,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 42,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 187/189 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 186 条；未验证；待处理 2 个文本记录"
+    },
+    {
+      "mod_id": "mushymato.LivestockBazaar",
+      "name": "Livestock Bazaar",
+      "status": "部分完成",
+      "completed_records": 41,
+      "total_records": 41,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 39,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 40,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 13,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 41/41 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 39 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Pathoschild.LookupAnything",
+      "name": "Lookup Anything",
+      "status": "部分完成",
+      "completed_records": 532,
+      "total_records": 539,
+      "extracted_coverage": 0.98701,
+      "installed_in_copy": 530,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 532,
+        "gmcm": 7
+      },
+      "runtime_verified": false,
+      "quality_review_items": 146,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 532/539 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 530 条；未验证；待处理 7 个文本记录"
+    },
+    {
+      "mod_id": "Lumisteria.LumiTilesheetsIndoor",
+      "name": "Lumisteria Tilesheets - Indoor",
+      "status": "部分完成",
+      "completed_records": 4,
+      "total_records": 7,
+      "extracted_coverage": 0.57143,
+      "installed_in_copy": 4,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 6,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 4/7 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 4 条；未验证；待处理 3 个文本记录"
+    },
+    {
+      "mod_id": "Lumisteria.TtilesheetsOutdoor",
+      "name": "Lumisteria Tilesheets - Outdoor",
+      "status": "无需翻译",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "确认仅图像或非文本数据，无需请求 API"
+    },
+    {
+      "mod_id": "7thAxis.LitD.CP",
+      "name": "Lurking in the Dark",
+      "status": "部分完成",
+      "completed_records": 1454,
+      "total_records": 1465,
+      "extracted_coverage": 0.99249,
+      "installed_in_copy": 1446,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 1455,
+        "asset": 9,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 190,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1454/1465 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1446 条；未验证；待处理 11 个文本记录"
+    },
+    {
+      "mod_id": "DIGUS.MailFrameworkMod",
+      "name": "Mail Framework Mod",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Coldopa.MiniBars",
+      "name": "Mini Bars",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mistyspring.mistycore",
+      "name": "MistyCore",
+      "status": "部分完成",
+      "completed_records": 11,
+      "total_records": 12,
+      "extracted_coverage": 0.91667,
+      "installed_in_copy": 11,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 11,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 11/12 个文本记录；游戏内生效待验证；已安装 11 条；未验证；待处理 1 个文本记录"
+    },
+    {
+      "mod_id": "mushymato.ModNameTooltip",
+      "name": "Mod Name Tooltip",
+      "status": "部分完成",
+      "completed_records": 44,
+      "total_records": 44,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 42,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 43,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 8,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 44/44 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 42 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "recon88.NoPamEnabling",
+      "name": "No Pam Enabling",
+      "status": "部分完成",
+      "completed_records": 22,
+      "total_records": 22,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 11,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 4,
+        "asset": 15,
+        "gmcm": 3
+      },
+      "runtime_verified": false,
+      "quality_review_items": 15,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 22/22 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 11 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Bagi.Nora.CP",
+      "name": "Nora The Herpetologist",
+      "status": "部分完成",
+      "completed_records": 891,
+      "total_records": 891,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 888,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 882,
+        "asset": 9
+      },
+      "runtime_verified": false,
+      "quality_review_items": 38,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 891/891 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 888 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "SpaceBaby.PartOfTheCommunity",
+      "name": "Part of the Community",
+      "status": "部分完成",
+      "completed_records": 22,
+      "total_records": 22,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 22,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 22
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 22/22 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 22 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "mushymato.PortraitsForAll",
+      "name": "PortraitsForAll",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "ReMapping.Vlgor",
+      "name": "Remapping",
+      "status": "部分完成",
+      "completed_records": 233,
+      "total_records": 235,
+      "extracted_coverage": 0.99149,
+      "installed_in_copy": 225,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 209,
+        "asset": 25,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 34,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 233/235 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 225 条；未验证；待处理 2 个文本记录"
+    },
+    {
+      "mod_id": "Rafseazz.RSVCP",
+      "name": "Ridgeside Village [Content Patcher component]",
+      "status": "部分完成",
+      "completed_records": 18340,
+      "total_records": 18381,
+      "extracted_coverage": 0.99777,
+      "installed_in_copy": 18025,
+      "pending_capture_fields": 97,
+      "by_adapter": {
+        "i18n": 17522,
+        "asset": 859
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1357,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 18340/18381 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 97 个混合 i18n 字段待游戏采集/条件版本验收；已安装 18025 条；未验证；待处理 41 个文本记录"
+    },
+    {
+      "mod_id": "Rafseazz.RSVFTM",
+      "name": "Ridgeside Village [Farm Type Manager component]",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "Rafseazz.RidgesideVillage",
+      "name": "Ridgeside Village [SMAPI component]",
+      "status": "部分完成",
+      "completed_records": 214,
+      "total_records": 214,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 201,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 212,
+        "gmcm": 2
+      },
+      "runtime_verified": false,
+      "quality_review_items": 58,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 214/214 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 201 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "Rafseazz.RSVSeasonalOutfits",
+      "name": "Ridgeside Village Seasonal Outfits",
+      "status": "部分完成",
+      "completed_records": 397,
+      "total_records": 397,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 397,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 396,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 54,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 397/397 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 397 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "JennaJuffuffles.MarinerToMermaid",
+      "name": "Seasonal Mariner to Mermaid",
+      "status": "部分完成",
+      "completed_records": 58,
+      "total_records": 58,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 58,
+      "pending_capture_fields": 12,
+      "by_adapter": {
+        "i18n": 57,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 58/58 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 12 个混合 i18n 字段待游戏采集/条件版本验收；已安装 58 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "SinZ.SpeedySolutions",
+      "name": "SinZational Speedy Solutions",
+      "status": "部分完成",
+      "completed_records": 24,
+      "total_records": 24,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 24,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 24
+      },
+      "runtime_verified": false,
+      "quality_review_items": 7,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 24/24 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 24 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "dylanjames.skiporsocialize",
+      "name": "Skip or Socialize",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "jennajuffuffles.SpaSolariumRevisited",
+      "name": "Solarium at the Spa Revisited",
+      "status": "部分完成",
+      "completed_records": 5,
+      "total_records": 5,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 5,
+      "pending_capture_fields": 2,
+      "by_adapter": {
+        "asset": 1,
+        "gmcm": 4
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 5/5 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 2 个混合 i18n 字段待游戏采集/条件版本验收；已安装 5 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "CasualInvidia.SpousesReactToDeath",
+      "name": "Spouses React To Player Death",
+      "status": "部分完成",
+      "completed_records": 389,
+      "total_records": 391,
+      "extracted_coverage": 0.99488,
+      "installed_in_copy": 389,
+      "pending_capture_fields": 22,
+      "by_adapter": {
+        "i18n": 388,
+        "asset": 2,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 3,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 389/391 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 22 个混合 i18n 字段待游戏采集/条件版本验收；已安装 389 条；未验证；待处理 2 个文本记录"
+    },
+    {
+      "mod_id": "7eventy7.StandardizedSeedSprites",
+      "name": "Standardized Seed Sprites",
+      "status": "部分完成",
+      "completed_records": 178,
+      "total_records": 180,
+      "extracted_coverage": 0.98889,
+      "installed_in_copy": 180,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 169,
+        "gmcm": 11
+      },
+      "runtime_verified": false,
+      "quality_review_items": 36,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 180/180 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 180 条；未验证；待处理 2 个文本记录"
+    },
+    {
+      "mod_id": "FlashShifter.StardewValleyExpandedCP",
+      "name": "Stardew Valley Expanded",
+      "status": "部分完成",
+      "completed_records": 12260,
+      "total_records": 12280,
+      "extracted_coverage": 0.99837,
+      "installed_in_copy": 12056,
+      "pending_capture_fields": 11,
+      "by_adapter": {
+        "i18n": 11340,
+        "asset": 939,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1116,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 12260/12280 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 11 个混合 i18n 字段待游戏采集/条件版本验收；已安装 12056 条；未验证；待处理 20 个文本记录"
+    },
+    {
+      "mod_id": "FlashShifter.SVE-FTM",
+      "name": "Stardew Valley Expanded Farm Type Manager",
+      "status": "待确认",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "无可提取文字；请安装插件采集"
+    },
+    {
+      "mod_id": "JennaJuffuffles.CollectionMarker.SVVE",
+      "name": "Stardew Valley VERY Expanded Collection",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "DN.SnS",
+      "name": "Sword & Sorcery [CP]",
+      "status": "部分完成",
+      "completed_records": 134,
+      "total_records": 135,
+      "extracted_coverage": 0.99259,
+      "installed_in_copy": 52,
+      "pending_capture_fields": 44,
+      "by_adapter": {
+        "asset": 133,
+        "gmcm": 2
+      },
+      "runtime_verified": false,
+      "quality_review_items": 82,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 134/135 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 44 个混合 i18n 字段待游戏采集/条件版本验收；已安装 52 条；未验证；待处理 1 个文本记录"
+    },
+    {
+      "mod_id": "KCC.SnS",
+      "name": "Sword and Sorcery (SMAPI Component)",
+      "status": "部分完成",
+      "completed_records": 335,
+      "total_records": 336,
+      "extracted_coverage": 0.99702,
+      "installed_in_copy": 335,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 335,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 31,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 335/336 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 335 条；未验证；待处理 1 个文本记录"
+    },
+    {
+      "mod_id": "DolphINaF.ESPortraits",
+      "name": "TDIT - Portraits for East Scarp",
+      "status": "部分完成",
+      "completed_records": 19,
+      "total_records": 21,
+      "extracted_coverage": 0.90476,
+      "installed_in_copy": 18,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 19,
+        "asset": 2
+      },
+      "runtime_verified": false,
+      "quality_review_items": 1,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 19/21 个文本记录；游戏内生效待验证；已安装 18 条；未验证；待处理 2 个文本记录"
+    },
+    {
+      "mod_id": "DolphINaF.ExtraPortraits",
+      "name": "TDIT - Portraits for Extras",
+      "status": "部分完成",
+      "completed_records": 197,
+      "total_records": 199,
+      "extracted_coverage": 0.98995,
+      "installed_in_copy": 121,
+      "pending_capture_fields": 8,
+      "by_adapter": {
+        "i18n": 118,
+        "asset": 80,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 79,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 197/199 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 8 个混合 i18n 字段待游戏采集/条件版本验收；已安装 121 条；未验证；待处理 2 个文本记录"
+    },
+    {
+      "mod_id": "DolphINaF.VendorPortraits",
+      "name": "TDIT - Portraits for Vendors",
+      "status": "部分完成",
+      "completed_records": 179,
+      "total_records": 180,
+      "extracted_coverage": 0.99444,
+      "installed_in_copy": 179,
+      "pending_capture_fields": 8,
+      "by_adapter": {
+        "i18n": 167,
+        "gmcm": 1,
+        "asset": 12
+      },
+      "runtime_verified": false,
+      "quality_review_items": 14,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 179/180 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；另有 8 个混合 i18n 字段待游戏采集/条件版本验收；已安装 179 条；未验证；待处理 1 个文本记录"
+    },
+    {
+      "mod_id": "Fippsie.TinyPam",
+      "name": "Tidy Pam",
+      "status": "无需翻译",
+      "completed_records": 0,
+      "total_records": 0,
+      "extracted_coverage": null,
+      "installed_in_copy": 0,
+      "pending_capture_fields": 0,
+      "by_adapter": {},
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "确认仅图像或非文本数据，无需请求 API"
+    },
+    {
+      "mod_id": "JennaJuffuffles.Obelisk",
+      "name": "Tiny Totem Statue Obelisks",
+      "status": "部分完成",
+      "completed_records": 164,
+      "total_records": 164,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 164,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 162,
+        "asset": 1,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 10,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 164/164 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 164 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "shekurika.worldMaps",
+      "name": "World Maps",
+      "status": "部分完成",
+      "completed_records": 1,
+      "total_records": 1,
+      "extracted_coverage": 1.0,
+      "installed_in_copy": 1,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 0,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 1/1 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 1 条；未验证；待处理 0 个文本记录"
+    },
+    {
+      "mod_id": "pneuma163.WorldNavigator",
+      "name": "World Navigator",
+      "status": "部分完成",
+      "completed_records": 386,
+      "total_records": 387,
+      "extracted_coverage": 0.99742,
+      "installed_in_copy": 385,
+      "pending_capture_fields": 0,
+      "by_adapter": {
+        "i18n": 386,
+        "gmcm": 1
+      },
+      "runtime_verified": false,
+      "quality_review_items": 148,
+      "unknown_dynamic_coverage": true,
+      "reason": "已处理 386/387 个文本记录；游戏内生效待验证；含插件译文，需启用采集插件；已安装 385 条；未验证；待处理 1 个文本记录"
+    }
+  ],
+  "full_library_acceptance": false,
+  "cold_600_seconds_verified": false
+}

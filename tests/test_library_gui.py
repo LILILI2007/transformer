@@ -39,7 +39,7 @@ class LibraryGUITests(unittest.TestCase):
     def test_automatic_detection_populates_default_checked_inventory(self):
         game = Path(self.temp.name) / 'Game'
         item = ModItem(game / 'Mods' / 'A', '示例')
-        with patch('modlingo.library_gui.discover_games', return_value=[game]), patch('modlingo.library_gui.scan_mods', return_value=[item]):
+        with patch('modlingo.library_gui.call_in_process', return_value=([game],game,[item])):
             self.app.detect()
             self.pump()
         self.assertEqual(self.app.mods, game / 'Mods')
@@ -50,7 +50,7 @@ class LibraryGUITests(unittest.TestCase):
         self.assertTrue(item.selected)
 
     def test_multiple_games_require_explicit_choice(self):
-        with patch('modlingo.library_gui.discover_games', return_value=[Path('A'), Path('B')]):
+        with patch('modlingo.library_gui.call_in_process', return_value=([Path('A'),Path('B')],None,[])):
             self.app.detect()
             self.pump()
         self.assertIsNone(self.app.mods)
@@ -68,7 +68,7 @@ class LibraryGUITests(unittest.TestCase):
         self.app.poll()
         self.assertEqual(self.app.tree.set('0', 'reason'), '没有标准语言文件')
         self.assertFalse(self.app.busy)
-        self.assertIn('失败或部分完成 1', self.app.summary.get())
+        self.assertIn('失败 1 个', self.app.summary.get())
 
     def test_close_while_busy_requests_stop_and_keeps_window(self):
         self.app.set_busy(True)
@@ -167,3 +167,68 @@ class LibraryGUITests(unittest.TestCase):
         editor.api_dialog.save()
         self.assertEqual(editor.config.provider, 'openai')
         editor.close()
+
+    def test_unverified_config_cannot_start_even_when_called_directly(self):
+        from modlingo.provider import preset_config
+        self.app.config = preset_config('deepseek', 'contract', 'test-key')
+        self.assertTrue(self.app.start_button.instate(['disabled']))
+        with patch('modlingo.api_verification.messagebox.showwarning') as warning, patch('modlingo.library_gui.run_batch') as batch:
+            self.app.start()
+            warning.assert_called_once()
+            batch.assert_not_called()
+
+    def test_success_unlocks_and_saving_configuration_locks_again(self):
+        from dataclasses import replace
+        from modlingo.provider import preset_config
+        self.app.config = preset_config('deepseek', 'contract', 'test-key')
+        with patch('modlingo.api_verification.messagebox.askyesno', return_value=True), patch('modlingo.api_verification.messagebox.showinfo'), patch('modlingo.api_verification.verify_connection') as factory:
+            factory.return_value = [('connection-test', 'Hello', '你好')]
+            self.app.test_connection()
+            self.assertTrue(self.app.start_button.instate(['disabled']))
+            self.pump()
+        self.assertTrue(self.app.api_ready())
+        self.assertIn('验证成功', self.app.api_status.get())
+        self.assertFalse(self.app.start_button.instate(['disabled']))
+        for field, value in [('model', 'changed-model'), ('api_key', 'changed-key'), ('base_url', 'https://another.example/v1'), ('timeout', 180), ('max_output_tokens', 4096), ('disable_thinking', not self.app.config.disable_thinking)]:
+            original = replace(self.app.config)
+            setattr(self.app.config, field, value)
+            self.assertFalse(self.app.api_ready(), field)
+            self.app.config = original
+        self.app.settings()
+        self.app.api_dialog.save()
+        self.assertFalse(self.app.api_ready())
+        self.assertTrue(self.app.start_button.instate(['disabled']))
+
+    def test_failed_or_non_chinese_verification_keeps_translation_locked(self):
+        from modlingo.provider import preset_config
+        self.app.config = preset_config('deepseek', 'contract', 'test-key')
+        for error in [ProjectError('API 请求失败（401）：密钥无效'), RuntimeError('private-internal-detail'), None]:
+            with patch('modlingo.api_verification.messagebox.askyesno', return_value=True), patch('modlingo.api_verification.messagebox.showerror'), patch('modlingo.api_verification.verify_connection') as factory:
+                factory.side_effect = error
+                factory.return_value = [('connection-test', 'Hello', 'Hello')]
+                self.app.test_connection()
+                self.pump()
+            self.assertFalse(self.app.api_ready())
+            self.assertTrue(self.app.start_button.instate(['disabled']))
+            self.assertIn('验证失败', self.app.api_status.get())
+            self.assertNotIn('private-internal-detail', self.app.api_status.get())
+
+    def test_stale_verification_result_cannot_unlock_changed_configuration(self):
+        from dataclasses import replace
+        from modlingo.provider import preset_config
+        self.app.config = preset_config('deepseek', 'contract', 'test-key')
+        old = replace(self.app.config)
+        old_generation = self.app.verification_generation
+        self.app.invalidate_api()
+        self.app.finish_api_test((old_generation, old, None))
+        self.assertFalse(self.app.api_ready())
+        self.assertTrue(self.app.start_button.instate(['disabled']))
+
+    def test_cancelled_verification_sends_no_request(self):
+        from modlingo.provider import preset_config
+        self.app.config = preset_config('deepseek', 'contract', 'test-key')
+        with patch('modlingo.api_verification.messagebox.askyesno', return_value=False), patch('modlingo.api_verification.verify_connection') as factory:
+            self.app.test_connection()
+            factory.assert_not_called()
+        self.assertFalse(self.app.busy)
+        self.assertFalse(self.app.api_ready())

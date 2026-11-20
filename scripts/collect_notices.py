@@ -18,7 +18,7 @@ def main():
         path = lib / "license.terms"
         if path.is_file():
             shutil.copyfile(path, output / (lib.name + "-license.terms"))
-    for name in ["pyinstaller", "pyinstaller-hooks-contrib", "altgraph", "pefile", "pywin32-ctypes", "packaging", "importlib-metadata", "zipp"]:
+    for name in ["pyinstaller", "pyinstaller-hooks-contrib", "altgraph", "pefile", "pywin32-ctypes", "packaging", "importlib-metadata", "zipp", "httpx", "httpcore", "anyio", "h11", "certifi", "idna", "typing-extensions", "exceptiongroup"]:
         try:
             distribution = importlib.metadata.distribution(name)
         except importlib.metadata.PackageNotFoundError:

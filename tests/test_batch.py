@@ -176,7 +176,7 @@ class BatchTests(unittest.TestCase):
                 self.assertEqual(len(report['failure']), 2)
                 self.assertIn('剩余', report['failure'][1]['reason'])
 
-    def test_failed_request_preserves_original_and_retry_uses_saved_batches(self):
+    def test_failed_batch_installs_valid_entries_and_retry_reuses_progress(self):
         source = {str(i): 'Hello ' + str(i) for i in range(10)}
         folder = self.make_mod(source=source, chinese={'extra': '原文件'})
         original = (folder / 'i18n' / 'zh.json').read_bytes()
@@ -189,7 +189,12 @@ class BatchTests(unittest.TestCase):
                 return super().translate(items, glossary)
         _, report = self.run_all(FailSecond())
         self.assertEqual(len(report['failure']), 1)
-        self.assertEqual((folder / 'i18n' / 'zh.json').read_bytes(), original)
+        partial = report['failure'][0]
+        self.assertEqual(partial['status'], '部分完成')
+        values = json.loads((folder / 'i18n' / 'zh.json').read_text(encoding='utf-8'))
+        self.assertEqual(values['extra'], '原文件')
+        self.assertEqual(len(values), 9)
+        self.assertEqual((Path(partial['receipt']).parent / 'original-zh.bin').read_bytes(), original)
         translator = FakeTranslator()
         _, report = self.run_all(translator)
         self.assertEqual(len(report['success']), 1)
@@ -251,6 +256,109 @@ class BatchTests(unittest.TestCase):
                     pass
         with library_lock(self.mods, self.storage):
             pass
+
+    def test_split_language_install_preserves_existing_files_and_can_restore(self):
+        folder = self.make_mod(source={'unused': 'unused'})
+        (folder / 'i18n' / 'default.json').unlink()
+        source = folder / 'i18n' / 'default'
+        chinese = folder / 'i18n' / 'zh'
+        source.mkdir(); chinese.mkdir()
+        (source / 'dialogue.json').write_text('{"a":"Hello"}', encoding='utf-8')
+        (source / 'ui.json').write_text('{"b":"Welcome"}', encoding='utf-8')
+        original = b'{"a":"Chinese original"}'
+        (chinese / 'ui.json').write_bytes(original)
+        translator = FakeTranslator()
+        _, report = self.run_all(translator)
+        self.assertEqual(len(report['success']), 1)
+        self.assertEqual(translator.calls, ['b'])
+        generated = chinese / 'ModLingo.generated.json'
+        self.assertEqual(set(json.loads(generated.read_text(encoding='utf-8'))), {'b'})
+        self.assertEqual((chinese / 'ui.json').read_bytes(), original)
+        restore(report['success'][0]['receipt'])
+        self.assertFalse(generated.exists())
+        self.assertEqual((chinese / 'ui.json').read_bytes(), original)
+
+    def test_changed_split_source_and_chinese_file_are_detected(self):
+        folder = self.make_mod()
+        (folder / 'i18n' / 'default.json').unlink()
+        source = folder / 'i18n' / 'default'
+        source.mkdir()
+        path = source / 'a.json'
+        path.write_text('{"a":"Hello"}', encoding='utf-8')
+        old = scan_mods(self.mods)[0].snapshot
+        path.write_text('{"a":"Changed"}', encoding='utf-8')
+        self.assertNotEqual(fingerprint(folder), old)
+
+    def test_split_generated_update_backup_and_player_edit_reuse(self):
+        folder = self.make_mod()
+        (folder / 'i18n/default.json').unlink()
+        source = folder / 'i18n/default'
+        source.mkdir()
+        path = source / 'a.json'
+        path.write_text('{"a":"Hello"}', encoding='utf-8')
+        self.run_all()
+        generated = folder / 'i18n/zh/ModLingo.generated.json'
+        generated.write_text('{"a":"玩家自定"}', encoding='utf-8')
+        translator = FakeTranslator()
+        self.run_all(translator)
+        self.assertEqual(translator.calls, [])
+        original = generated.read_bytes()
+        path.write_text('{"a":"Changed"}', encoding='utf-8')
+        _, report = self.run_all()
+        restore(report['success'][0]['receipt'])
+        self.assertEqual(generated.read_bytes(), original)
+
+    def test_split_existing_chinese_needs_no_generated_file(self):
+        folder = self.make_mod()
+        (folder / 'i18n/default.json').unlink()
+        source, chinese = folder / 'i18n/default', folder / 'i18n/zh'
+        source.mkdir(); chinese.mkdir()
+        (source / 'a.json').write_text('{"a":"Hello"}', encoding='utf-8')
+        (chinese / 'a.json').write_text('{"a":"你好"}', encoding='utf-8')
+        translator = FakeTranslator()
+        _, report = self.run_all(translator)
+        self.assertEqual(translator.calls, [])
+        self.assertEqual(len(report['success']), 1)
+        self.assertFalse((chinese / 'ModLingo.generated.json').exists())
+
+    def test_format_failure_splits_and_installs_other_entries(self):
+        folder = self.make_mod(source={'a': 'First', 'b': 'Bad', 'c': 'Third'})
+        class Selective(FakeTranslator):
+            def translate(inner, items, glossary):
+                if any(k == 'b' for k, _ in items):
+                    raise ProjectError('模型未返回有效 JSON')
+                return super().translate(items, glossary)
+        _, report = self.run_all(Selective())
+        self.assertEqual(report['failure'][0]['status'], '部分完成')
+        values = json.loads((folder / 'i18n' / 'zh.json').read_text(encoding='utf-8'))
+        self.assertEqual(set(values), {'a', 'c'})
+        translator = FakeTranslator()
+        _, report = self.run_all(translator)
+        self.assertEqual(translator.calls, ['b'])
+        self.assertEqual(len(report['success']), 1)
+
+    def test_existing_invalid_chinese_is_retranslated_without_discarding_good_keys(self):
+        self.make_mod(source={'a': 'Hello {{name}}', 'b': 'Welcome'}, chinese={'a': '你好', 'b': '欢迎'})
+        translator = FakeTranslator()
+        _, report = self.run_all(translator)
+        self.assertEqual(translator.calls, ['a'])
+        self.assertEqual(len(report['success']), 1)
+
+    def test_numeric_and_punctuation_only_entries_do_not_call_api(self):
+        self.make_mod(source={'dots': '...', 'ratio': '3 / 4', 'empty': '', 'token': '{{name}}'})
+        translator = FakeTranslator()
+        _, report = self.run_all(translator)
+        self.assertEqual(translator.calls, [])
+        self.assertEqual(len(report['success']), 1)
+
+    def test_repeated_network_failures_stop_remaining_paid_requests(self):
+        for name in ('A', 'B', 'C', 'D', 'E'):
+            self.make_mod(name)
+        translator = FakeTranslator('连接失败或超时')
+        _, report = self.run_all(translator)
+        self.assertEqual(len(translator.calls), 3)
+        self.assertEqual(len(report['failure']), 5)
+        self.assertIn('剩余', report['failure'][-1]['reason'])
 
     def test_running_game_blocks_installation(self):
         self.make_mod()

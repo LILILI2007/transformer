@@ -157,6 +157,23 @@ class CompatibilityTests(unittest.TestCase):
     def test_ollama_http_contract(self): self.check_contract('ollama')
     def test_lmstudio_http_contract(self): self.check_contract('lmstudio')
 
+    def test_async_pool_all_twelve_presets_over_real_local_http(self):
+        import asyncio
+        from modlingo.async_provider import Session, Budget
+        async def run():
+            for provider in CONTRACTS:
+                with self.subTest(provider=provider):
+                    config=self.local_config(provider)
+                    translator=Translator(config)
+                    items=[('greeting','Hello {{Name}}!$h\nBye.')]
+                    messages,prefix,records,restores=translator.prepare(items,{})
+                    async with Session(config) as session:
+                        response=await session.post(translator,messages,Budget())
+                    result=translator.decode(response,items,prefix,records,restores)
+                    self.assertEqual(result[0][2],'你好 {{Name}}!$h\n再见.')
+                    self.assertEqual(self.requests[-1][0],CONTRACTS[provider][0])
+        asyncio.run(run())
+
     def test_truncated_valid_json_is_rejected_for_every_protocol(self):
         type(self).response_mode = 'truncated'
         for provider in ('deepseek', 'openai', 'claude'):

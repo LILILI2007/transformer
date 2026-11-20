@@ -20,9 +20,21 @@ class GUITests(unittest.TestCase):
         self.root.update()
 
     def tearDown(self):
+        for callback in self.root.tk.call('after', 'info'):
+            self.root.after_cancel(callback)
         self.root.destroy()
         self.environment.stop()
         self.temp.cleanup()
+
+    def test_large_text_table_only_builds_current_page(self):
+        from modlingo.core import Entry
+        self.app.project.entries={str(i):Entry('Hello farmer '+str(i)) for i in range(17522)}
+        self.app.refresh();self.root.update()
+        self.assertEqual(len(self.app.tree.get_children()),200)
+        self.assertEqual(self.app.page,0)
+        self.app.change_page(1);self.root.update()
+        self.assertEqual(len(self.app.tree.get_children()),200)
+        self.assertEqual(self.app.page,1)
 
     def test_manual_edit_survives_selection_filter_and_project_reload(self):
         from modlingo.core import Project
@@ -82,3 +94,26 @@ class GUITests(unittest.TestCase):
         with patch("modlingo.gui.filedialog.askopenfilename", return_value=str(self.app.project_path)):
             self.app.open_project()
         self.assertEqual(self.app.project.entries[key].target, "保留尚未切换的编辑")
+
+    def test_editor_requires_verified_api_and_unlocks_after_test(self):
+        import time
+        from modlingo.provider import preset_config
+        self.app.config = preset_config('openai', 'contract', 'test-key')
+        with patch('modlingo.api_verification.messagebox.showwarning') as warning, patch('modlingo.gui.Translator') as translator:
+            self.app.translate()
+            warning.assert_called_once()
+            translator.assert_not_called()
+        with patch('modlingo.api_verification.messagebox.askyesno', return_value=True), patch('modlingo.api_verification.messagebox.showinfo'), patch('modlingo.api_verification.verify_connection') as factory:
+            factory.return_value = [('connection-test', 'Hello', '你好')]
+            self.app.test_connection()
+            deadline = time.monotonic() + 5
+            while self.app.busy and time.monotonic() < deadline:
+                self.root.update()
+                time.sleep(.01)
+        self.assertFalse(self.app.busy)
+        self.assertTrue(self.app.api_ready())
+        self.assertFalse(self.app.translate_button.instate(['disabled']))
+        self.app.settings()
+        self.app.api_dialog.save()
+        self.assertFalse(self.app.api_ready())
+        self.assertTrue(self.app.translate_button.instate(['disabled']))

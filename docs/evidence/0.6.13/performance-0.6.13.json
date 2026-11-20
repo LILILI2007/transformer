@@ -1,0 +1,21 @@
+{
+  "schema_version": 3,
+  "version": "0.6.13",
+  "created": "2026-10-22T00:44:55.964841+08:00",
+  "mode": "offline_existing_cache_copy_only",
+  "mods": 122,
+  "elapsed_seconds": 235.172,
+  "timings": {
+    "scan_prepare_seconds": 88.53200000000652,
+    "planning_seconds": 28.79700000002049,
+    "confirmation_wait_seconds": 0,
+    "network_seconds": 0.0,
+    "validation_seconds": 0,
+    "cache_write_seconds": 0,
+    "install_seconds": 100.20299999997951
+  },
+  "requests": 0,
+  "player_files_changed": [],
+  "cold_600_seconds_verified": false,
+  "note": "已有译文的温副本；不是首次冷缓存或模型服务性能。"
+}

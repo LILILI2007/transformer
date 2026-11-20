@@ -14,11 +14,14 @@ from . import __version__
 from .batch import data_root, library_lock, restore, run_batch
 from .core import ProjectError, atomic_write, read_jsonc
 from .discovery import discover_games, game_root, scan_mods
+from .api_verification import APIVerification
 from .provider import APIConfig, Translator
 from .theme import COLORS, FarmBanner, apply_theme, fit_window, paper_panel, style_rows
+from .workers import call_in_process, scan_worker, detect_worker
+from .engine import run_engine
 
 
-class LibraryApp:
+class LibraryApp(APIVerification):
     def __init__(self, root, auto=True):
         self.root = root
         root.title('ModLingo ' + __version__ + ' · 一次翻译多个 mod')
@@ -32,7 +35,9 @@ class LibraryApp:
         self.mods = None
         self.report_path = None
         self.results = []
-        self.config = APIConfig(api_key=os.environ.get('MODLINGO_API_KEY', ''), provider='deepseek')
+        self.config = APIConfig(api_key=os.environ.get('MODLINGO_API_KEY', ''), provider='deepseek', disable_thinking=True)
+        self.concurrency = tk.StringVar(value='4')
+        self.retry_exhausted = tk.BooleanVar(value=False)
         self.game = tk.StringVar()
         self.status = tk.StringVar(value='正在准备自动识别目录；也可以手动指定游戏目录。')
         self.summary = tk.StringVar(value='首次使用：自动识别 → 配置 API → 默认全选 → 翻译并安装 → 查看结果')
@@ -40,7 +45,9 @@ class LibraryApp:
         self.view = tk.StringVar(value='全部')
         self.row_details = tk.StringVar(value='选择一行查看完整说明；点击选择列或按空格勾选 mod。')
         self.metrics = {key: tk.StringVar(value='0') for key in ('total', 'selected', 'success', 'attention')}
+        self.init_verification()
         self._build()
+        self.update_api_buttons()
         root.protocol('WM_DELETE_WINDOW', self.close)
         root.after(100, self.poll)
         if auto:
@@ -67,6 +74,15 @@ class LibraryApp:
         ttk.Button(paths, text='自动识别', command=self.detect).pack(side='left', padx=(0, 6))
         ttk.Button(paths, text='手动选择', command=self.choose).pack(side='left', padx=(0, 6))
         ttk.Button(paths, text='配置 API', command=self.settings, style='Accent.TButton').pack(side='left')
+        self.verification_row(paths_panel)
+        controls = ttk.Frame(paths_panel)
+        controls.pack(fill='x')
+        ttk.Label(controls, text='并发请求').pack(side='left')
+        self.concurrency_box = ttk.Combobox(controls, textvariable=self.concurrency, values=['1','2','3','4','5','6','8','16','32'], state='readonly', width=3)
+        self.concurrency_box.pack(side='left', padx=6)
+        ttk.Button(controls, text='安装采集插件', command=self.install_bridge).pack(side='left', padx=6)
+        ttk.Button(controls, text='卸载采集插件', command=self.remove_bridge).pack(side='left')
+        ttk.Label(controls, text='DLL/资源文字：进游戏采集 → 退出 → 重新扫描翻译', style='Muted.TLabel').pack(side='right')
         cards = ttk.Frame(frame)
         self.cards = cards
         cards.pack(fill='x', pady=(0, 10))
@@ -130,8 +146,9 @@ class LibraryApp:
         ttk.Button(bottom, text='恢复中文备份', command=self.rollback).pack(side='left')
         self.start_button = ttk.Button(bottom, text='开始翻译并安装', command=self.start, style='Accent.TButton')
         self.start_button.pack(side='right')
-        self.stop_button = ttk.Button(bottom, text='停止后续请求', command=self.stop.set, state='disabled')
+        self.stop_button = ttk.Button(bottom, text='停止并保存', command=self.request_stop, state='disabled')
         self.stop_button.pack(side='right', padx=8)
+        ttk.Checkbutton(tools, text='重试待处理（计费）', variable=self.retry_exhausted).pack(side='left', padx=8)
         ttk.Label(footer, text='改写前自动备份已有中文。请先退出游戏与 SMAPI；翻译完成后以中文启动游戏。',
                   style='Muted.TLabel').pack(anchor='w', pady=(0, 7))
         self.progress = ttk.Progressbar(footer)
@@ -151,7 +168,7 @@ class LibraryApp:
             compact = self.root.winfo_height() < round(760 * self.banner.scale)
             if compact != self.banner.compact:
                 self.banner.compact = compact
-                self.banner.configure(height=round((95 if compact else 148) * self.banner.scale))
+                self.banner.configure(height=round((75 if compact else 148) * self.banner.scale))
             small = self.root.winfo_height() < round(720 * self.banner.scale)
             if small and self.cards.winfo_manager():
                 self.cards.pack_forget()
@@ -168,7 +185,7 @@ class LibraryApp:
                 continue
             state = self.tree.set(iid, 'state')
             reason = self.tree.set(iid, 'reason')
-            attention = state in ('无法处理', '失败', '部分完成')
+            attention = state in ('无法处理', '失败', '部分完成', '部分支持', '文件异常', '尚未支持', '需进游戏采集', '待确认', '已暂停')
             counts['success'] += state == '成功'
             counts['attention'] += attention
             tag = 'good' if state == '成功' else 'failed' if state == '失败' else 'attention' if attention else 'odd' if index % 2 else 'even'
@@ -208,9 +225,36 @@ class LibraryApp:
 
     def set_busy(self, value):
         self.busy = value
-        self.start_button.configure(state='disabled' if value else 'normal')
+        self.update_api_buttons()
         self.stop_button.configure(state='normal' if value else 'disabled')
         self.path_box.configure(state='disabled' if value else 'readonly')
+        self.concurrency_box.configure(state='disabled' if value else 'readonly')
+
+    def request_stop(self):
+        self.stop.set()
+        self.status.set('正在取消本地等待并保存已返回结果；已发送的请求仍可能计费。')
+
+    def install_bridge(self):
+        if not self.guard() or self.mods is None:
+            return
+        from .bridge_io import install_plugin
+        mods = self.mods
+        def worker():
+            path = install_plugin(mods)
+            self.events.put(('message', '采集插件已安装：'+str(path)+'。用 SMAPI 启动，访问 mod 菜单后退出，再重新扫描。插件不联网。'))
+        self.launch(worker)
+
+    def remove_bridge(self):
+        if not self.guard() or self.mods is None:
+            return
+        if not messagebox.askyesno('卸载采集插件', '移除插件程序，保留采集记录和译文供恢复。请先退出游戏。继续？', parent=self.root):
+            return
+        from .bridge_io import uninstall_plugin
+        mods=self.mods
+        def worker():
+            uninstall_plugin(mods)
+            self.events.put(('message','采集插件程序已卸载；采集和译文保留。'))
+        self.launch(worker)
 
     def launch(self, worker):
         self.set_busy(True)
@@ -235,9 +279,7 @@ class LibraryApp:
                 saved = read_jsonc(data_root() / 'settings.json').get('game_directory')
             except (OSError, ProjectError, AttributeError):
                 pass
-            games = discover_games(saved)
-            selected = games[0] if len(games) == 1 else next((g for g in games if str(g) == saved), None)
-            items = scan_mods(selected / 'Mods') if selected else []
+            games, selected, items = call_in_process(detect_worker, saved)
             self.events.put(('detected', (games, selected, items)))
         self.launch(worker)
 
@@ -263,7 +305,7 @@ class LibraryApp:
         selected = self.game.get()
         def snapshot_worker():
             root = game_root(selected)
-            self.events.put(('scanned', (root, scan_mods(root / 'Mods'))))
+            self.events.put(('scanned', (root, call_in_process(scan_worker, root))))
         self.status.set('正在扫描 mod 并锁定文件版本……')
         self.launch(snapshot_worker)
 
@@ -274,7 +316,7 @@ class LibraryApp:
         self.items = items
         for index, item in enumerate(items):
             self.tree.insert('', 'end', iid=str(index), values=('☑' if item.selected else '☐', item.name + ' ' + item.version,
-                             '无法处理' if item.reason else '待翻译', item.reason or str(item.folder)))
+                             getattr(item,'category','无法处理' if item.reason else '待翻译'), item.reason or str(item.folder)))
         atomic_write(data_root() / 'settings.json', json.dumps({'game_directory': str(root)}, ensure_ascii=False).encode('utf-8'))
         self.summary.set('发现 %d 个 mod，默认全选；%d 个暂不可处理，将在结果中说明原因。点击选择列或按空格切换。' % (len(items), sum(bool(i.reason) for i in items)))
         self.status.set('Mods 目录已锁定：' + str(self.mods) + '。请配置 API 后开始。')
@@ -312,20 +354,15 @@ class LibraryApp:
         from .api_settings import APISettingsDialog
         def apply(config):
             self.config = config
-            self.status.set('API 已配置；现在可以翻译并安装所选 mod。')
+            self.invalidate_api()
+            self.status.set('API 设置已保存，请通过验证后再翻译。')
         self.api_dialog = APISettingsDialog(self.root, self.config, apply, self.test_connection)
 
     def test_connection(self):
-        if not self.guard():
-            return
-        config = replace(self.config)
-        def worker():
-            Translator(config).translate([('test', 'Hello, farmer!')], {})
-            self.events.put(('message', '连接及响应格式检查通过；不代表全部模型或翻译质量。'))
-        self.launch(worker)
+        self.begin_api_test(self.set_busy)
 
     def start(self):
-        if not self.guard():
+        if not self.guard() or not self.require_verified_api():
             return
         items = [replace(item) for item in self.items if item.selected]
         if not items or self.mods is None:
@@ -337,17 +374,19 @@ class LibraryApp:
             self.status.set(str(exc))
             self.settings()
             return
-        if not messagebox.askyesno('开始翻译并安装', '将处理 %d 个 mod，向配置的 API 发送待译文本并可能计费。\n成功译文会直接写入各 mod 的 i18n/zh.json，原中文会自动备份。\n复杂语法、不支持的文件和未通过检查的译文会列入失败或部分完成名单。\n\n请确认已退出游戏和 SMAPI。是否开始？' % len(items), parent=self.root):
-            return
+        self.plan_decision=queue.Queue()
         self.stop.clear()
         self.results = []
         self.progress.configure(maximum=len(items), value=0)
-        mods, config = self.mods, replace(self.config)
+        mods, config, concurrency = self.mods, replace(self.config), int(self.concurrency.get())
+        retry_exhausted = self.retry_exhausted.get()
         def worker():
-            path, report = run_batch(items, mods, Translator(config), self.stop,
-                                     notify=lambda result: self.events.put(('result', result)))
+            path, report = run_engine(items, mods, config, self.stop, concurrency=concurrency,
+                                      plan_decision=self.plan_decision,
+                                      retry_exhausted=retry_exhausted,
+                                      notify=lambda kind,data: self.events.put((kind,data)))
             self.events.put(('report', (path, report)))
-        self.status.set('正在批量翻译并安装；每个 mod 完成后保存结果。')
+        self.status.set('正在准备并发任务；每批校验通过的译文立即保存。')
         self.launch(worker)
 
     def open_report(self):
@@ -368,7 +407,7 @@ class LibraryApp:
             return
         try:
             report = read_jsonc(Path(path))
-            receipts = [Path(r['receipt']) for r in report['success'] + report['failure'] if r.get('receipt')]
+            receipts = [Path(p) for r in report['success'] + report['failure'] for p in r.get('receipts', [r['receipt']] if r.get('receipt') else [])]
             if not receipts:
                 raise ProjectError('此记录没有需要恢复的安装文件')
             if not messagebox.askyesno('恢复备份', '将尝试恢复这次处理的 %d 个中文文件。后续被修改的文件会跳过。继续？' % len(receipts), parent=self.root):
@@ -399,7 +438,11 @@ class LibraryApp:
 
     def poll(self):
         try:
-            while True:
+            import time
+            started = time.perf_counter()
+            for _ in range(50):
+                if time.perf_counter()-started > .008:
+                    break
                 kind, data = self.events.get_nowait()
                 if kind == 'detected':
                     self.games, selected, items = data
@@ -422,12 +465,36 @@ class LibraryApp:
                             self.tree.set(str(index), 'reason', data['reason'])
                     self.refresh_inventory()
                     self.select_details()
-                    self.progress.configure(value=len(self.results))
                     self.status.set('已处理 %d 个：%s · %s' % (len(self.results), data['name'], data['status']))
+                elif kind == 'translation_plan':
+                    self.summary.set('去重后待译 %d 个字段 / %d 个片段；已可用 %d 个片段，合并重复 %d 个片段。' % (data['pending_fields'],data['unique_pending_fragments'],data['already_available_fragments'],data['duplicate_fragments']))
+                    if data['pending_fields']:
+                        bridge=data.get('bridge',{})
+                        bridge_note='\n伴随插件缺失：存在插件译文时会补齐程序。' if not bridge.get('ready',True) else ''
+                        approved=messagebox.askyesno('确认实际翻译用量',self.summary.get()+bridge_note+'\n初始预计约 %d 次 HTTP 请求；拆分与重试可能增加请求数。\n\n确认已退出游戏。继续将向 API 发送文本并可能计费，随后备份并安装已校验译文。' % data['estimated_initial_requests'],parent=self.root)
+                        self.plan_decision.put(approved)
+                elif kind == 'engine_progress':
+                    self.progress.configure(maximum=max(1,data['total']), value=data['completed']+data.get('failed',0))
+                    eta='估算中' if data['eta_seconds'] is None else '%d 分 %d 秒' % divmod(data['eta_seconds'],60)
+                    age='尚无响应' if data['last_response'] is None else '%d 秒前' % max(0,int(time.time()-data['last_response']))
+                    self.status.set('%s · 片段完成 %d/%d · 失败 %d · 缓存 %d · HTTP 已发 %d / 处理中 %d · 重试等待 %d · 最近响应 %s · 本轮剩余 %s' % (data['phase'],data['completed'],data['total'],data.get('failed',0),data['cache_hits'],data['requests'],data['in_flight'],data['waiting_retry'],age,eta))
                 elif kind == 'report':
                     self.report_path, report = data
-                    self.summary.set('成功 %d 个；失败或部分完成 %d 个。部分完成已安装的条目和跳过原因见结果记录。' % (len(report['success']), len(report['failure'])))
-                    self.status.set('处理完成。请查看名单；进入游戏后选择中文并通过 SMAPI 启动。结果：' + str(self.report_path))
+                    partial = sum(r['status'] == '部分完成' for r in report['failure'])
+                    unsupported = sum(r['status'] == '不支持' for r in report['failure'])
+                    if report.get('schema_version', 1) >= 2:
+                        from collections import Counter
+                        counts=Counter(r['status'] for r in report['success']+report['failure'])
+                        self.summary.set('；'.join('%s %d 个' % (name,counts[name]) for name in ('成功','部分完成','失败','文件异常','需进游戏采集','无需翻译','仅其他语言','待确认','已暂停'))+'。可采集不代表已汉化，详情见记录。')
+                    else:
+                        failed = len(report['failure']) - partial - unsupported
+                        self.summary.set('成功 %d 个；部分完成 %d 个；失败 %d 个；不支持 %d 个（失败或部分完成等共 %d 个需关注）。详情见记录。' % (len(report['success']), partial, failed, unsupported, len(report['failure'])))
+                    if report.get('paused_reason'):
+                        self.status.set('任务已暂停：'+report['paused_reason']+'；已返回译文已保存。结果：'+str(self.report_path))
+                    else:
+                        self.status.set('处理完成。请查看名单；进入游戏后选择中文并通过 SMAPI 启动。结果：' + str(self.report_path))
+                elif kind == 'api_test':
+                    self.finish_api_test(data)
                 elif kind in ('error', 'message'):
                     self.status.set(data)
                 elif kind == 'done':
@@ -441,6 +508,6 @@ class LibraryApp:
     def close(self):
         if self.busy:
             self.stop.set()
-            self.status.set('正在停止，请等待当前请求结束。已完成 mod 会保留；处理结束后再关闭。')
+            self.status.set('正在取消本地等待并保存结果；已发送请求仍可能计费，保存后可关闭。')
             return
         self.root.destroy()

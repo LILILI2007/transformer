@@ -1,0 +1,13 @@
+{
+  "Name": "ModLingo Bridge",
+  "Author": "ModLingo contributors",
+  "Version": "0.5.7",
+  "Description": "Offline text capture and checked Chinese replacements; no API keys or network calls.",
+  "UniqueID": "ModLingo.Bridge",
+  "EntryDll": "ModLingo.Bridge.dll",
+  "MinimumApiVersion": "4.1.0",
+  "Dependencies": [
+    {"UniqueID": "spacechase0.GenericModConfigMenu", "IsRequired": false},
+    {"UniqueID": "Pathoschild.ContentPatcher", "IsRequired": false}
+  ]
+}

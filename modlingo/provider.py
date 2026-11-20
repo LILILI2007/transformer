@@ -12,8 +12,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .core import TOKEN, ProjectError, validate_translation
+from .core import TOKEN, MASK_TOKEN, ProjectError, validate_translation
 from . import __version__
+from .failures import TranslationError, reason
 
 
 PROTOCOLS = {'chat': 'Chat Completions', 'responses': 'OpenAI Responses', 'anthropic': 'Claude Messages'}
@@ -29,7 +30,7 @@ class ProviderPreset:
 
 
 PRESETS = {
-    'deepseek': ProviderPreset('DeepSeek', 'https://api.deepseek.com', note='填写控制台模型 ID；例如 deepseek-flash。'),
+    'deepseek': ProviderPreset('DeepSeek', 'https://api.deepseek.com', note='填写控制台模型 ID；例如 deepseek-flash。普通翻译默认关闭思考以减少等待。', disable_thinking=True),
     'qwen': ProviderPreset('千问 / 百炼（北京）', 'https://dashscope.aliyuncs.com/compatible-mode/v1', note='密钥必须与地域一致；可换为控制台提供的业务空间专属地址。选支持关闭思考的文本模型。', disable_thinking=True),
     'qwen_intl': ProviderPreset('千问 / 百炼（新加坡）', 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', note='使用新加坡地域密钥；可换业务空间专属地址。强制思考/流式模型暂不支持。', disable_thinking=True),
     'kimi': ProviderPreset('Kimi / 月之暗面', 'https://api.moonshot.cn/v1', note='使用开放平台 API 密钥和模型 ID，网页会员不等于 API 额度。'),
@@ -56,14 +57,14 @@ class APIConfig:
     base_url: str = "https://api.deepseek.com"
     model: str = ""
     api_key: str = field(default='', repr=False)
-    timeout: float = 60
+    timeout: float = 120
     provider: str = 'custom'
     protocol: str = 'chat'
     max_output_tokens: int = 8192
     workspace_id: str = ''
     disable_thinking: bool = False
 
-    def endpoint(self) -> str:
+    def endpoint(self, validate_credentials=True) -> str:
         if self.protocol not in PROTOCOLS or self.provider not in PRESETS:
             raise ProjectError('未知厂商或协议，请重新选择 API 配置')
         if self.provider != 'custom' and self.protocol != PRESETS[self.provider].protocol:
@@ -91,7 +92,7 @@ class APIConfig:
             raise ProjectError("请使用 HTTPS 地址；HTTP 仅允许本机模型服务")
         if not self.model.strip():
             raise ProjectError("请填写服务商提供的模型名称")
-        if not self.api_key.strip() and not local:
+        if validate_credentials and not self.api_key.strip() and not local:
             raise ProjectError("请填写 API 密钥（仅保存在本次运行内存中）")
         suffix = {'chat': '/chat/completions', 'responses': '/responses', 'anthropic': '/messages'}[self.protocol]
         if parsed.path.endswith(('/chat/completions', '/responses', '/messages')):
@@ -109,7 +110,7 @@ class NoRedirect(HTTPRedirectHandler):
         raise ProjectError("服务返回重定向；请直接填写最终 API 地址")
 
 
-def batches(items, max_items=8, max_chars=18000):
+def batches(items, max_items=8, max_chars=6000):
     batch, length = [], 0
     for item in items:
         size = len(item[1])
@@ -122,6 +123,28 @@ def batches(items, max_items=8, max_chars=18000):
         yield batch
 
 
+def recover_batches(translator, items, glossary, stop=None):
+    """Yield successes immediately; split only malformed model responses.
+
+    For n items there are at most 2*n-1 translation calls. Transport/auth errors
+    retain their existing HTTP retry budget and are never recursively retried.
+    """
+    if stop is not None and stop.is_set():
+        return
+    try:
+        result = translator.translate(items, glossary)
+        yield items, result, ''
+    except ProjectError as exc:
+        error = str(exc)
+        repairable = any(word in error for word in ('JSON', '截断', '保护标记', '条目缺失', '译文检查', '字符串', '重复键'))
+        if repairable and len(items) > 1:
+            middle = len(items) // 2
+            yield from recover_batches(translator, items[:middle], glossary, stop)
+            yield from recover_batches(translator, items[middle:], glossary, stop)
+        else:
+            yield items, [], error
+
+
 def _strict_pairs(pairs):
     data = {}
     for key, value in pairs:
@@ -129,6 +152,12 @@ def _strict_pairs(pairs):
             raise ProjectError("模型响应含重复键，请重试")
         data[key] = value
     return data
+
+
+class ModelResponseError(ProjectError):
+    def __init__(self, code, message):
+        self.code = code
+        super().__init__(message)
 
 
 class Translator:
@@ -171,24 +200,42 @@ class Translator:
             raise ProjectError('API 响应不是对象，请检查协议选择')
         if payload.get('error') or payload.get('type') == 'error':
             raise ProjectError('API 返回错误响应；请检查模型、额度和配置（错误正文已隐藏）')
+        usage=payload.get('usage',{})
+        if isinstance(usage,dict):
+            self.last_usage={key:value for key,value in usage.items() if key in ('input_tokens','output_tokens','prompt_tokens','completion_tokens','total_tokens','prompt_cache_hit_tokens','prompt_cache_miss_tokens') and type(value) is int and value>=0}
+            details=usage.get('completion_tokens_details') or usage.get('output_tokens_details') or {}
+            reasoning=details.get('reasoning_tokens') if isinstance(details,dict) else None
+            if type(reasoning) is int and reasoning>=0:self.last_usage['reasoning_tokens']=reasoning
         protocol = self.config.protocol
         if protocol == 'chat':
             choice = payload['choices'][0]
-            if choice.get('finish_reason') not in (None, 'stop'):
-                raise ProjectError('模型输出被截断、过滤或请求了工具；未写入译文，请调整输出上限或模型')
+            finish = choice.get('finish_reason')
+            if finish == 'length':
+                raise ModelResponseError('output_limit','模型输出达到上限被截断；缩小批次后重试')
+            if finish in ('tool_calls','function_call'):
+                raise ModelResponseError('tool_call','模型返回工具调用，未写入译文；请使用普通文本模型')
+            if finish == 'content_filter':
+                raise ModelResponseError('refusal','模型内容过滤，保留原文；不自动反复请求')
+            if finish not in (None,'stop'):
+                raise ModelResponseError('incomplete','模型以未知状态结束，保留原文')
             message = choice['message']
             if message.get('refusal') or message.get('tool_calls'):
-                raise ProjectError('模型拒绝回答或返回工具调用，没有可用译文')
+                raise ModelResponseError('refusal' if message.get('refusal') else 'tool_call','模型拒绝回答或返回工具调用，没有可用译文')
             content = message['content']
             if isinstance(content, list):
                 content = self._blocks(content, ('text', 'output_text'))
         elif protocol == 'anthropic':
+            if payload.get('stop_reason') == 'max_tokens':
+                raise ModelResponseError('output_limit','Claude 输出达到上限被截断；缩小批次后重试')
             if payload.get('stop_reason') not in ('end_turn', 'stop_sequence'):
-                raise ProjectError('Claude 输出未完整结束或请求工具；请调整输出上限后重试')
+                raise ModelResponseError('incomplete','Claude 输出未完整结束或请求工具，保留原文')
             content = self._blocks(payload['content'], ('text',), ('thinking', 'redacted_thinking'))
         else:
             if payload.get('status') != 'completed':
-                raise ProjectError('Responses 输出未完成、被截断或失败；未写入译文')
+                details=payload.get('incomplete_details') or {}
+                if isinstance(details,dict) and details.get('reason')=='max_output_tokens':
+                    raise ModelResponseError('output_limit','Responses 输出达到上限被截断；缩小批次后重试')
+                raise ModelResponseError('incomplete','Responses 输出未完成或失败；未写入译文')
             texts = []
             for item in payload['output']:
                 if item.get('type') == 'reasoning':
@@ -199,11 +246,6 @@ class Translator:
             content = ''.join(texts)
         if not isinstance(content, str) or not content.strip():
             raise ProjectError('API 没有返回最终文本；思考过程不能当作译文')
-        usage = payload.get('usage', {})
-        if isinstance(usage, dict):
-            self.last_usage = {key: value for key, value in usage.items()
-                               if key in ('input_tokens', 'output_tokens', 'prompt_tokens', 'completion_tokens', 'total_tokens')
-                               and type(value) is int and value >= 0}
         return content
 
     @staticmethod
@@ -218,7 +260,7 @@ class Translator:
             if kind in ignored:
                 continue
             if kind not in text_types or not isinstance(block.get('text'), str):
-                raise ProjectError('模型返回拒绝、工具或未知内容，未写入译文')
+                raise ModelResponseError('refusal' if kind=='refusal' else 'tool_call','模型返回拒绝、工具或未知内容，未写入译文')
             text.append(block['text'])
         return ''.join(text)
 
@@ -253,11 +295,13 @@ class Translator:
             except (ValueError, KeyError, IndexError, TypeError, AttributeError):
                 raise ProjectError("API 响应格式不兼容，或返回内容不完整") from None
 
-    def translate(self, items, glossary):
-        """Return key/source/target triples. Reject a malformed batch atomically."""
-        if not items:
-            return []
-        prefix = "__ML_" + uuid.uuid4().hex[:12] + "_"
+    def prepare(self, items, glossary):
+        # DeepSeek's long random nonce is repeated in every protection marker,
+        # inflating both billed input/output and response latency. The item/token
+        # indices already identify markers within this request. Retain a nonce
+        # when source data contains our namespace, and for unverified vendors.
+        prefix = '__ML_' if self.config.provider=='deepseek' else "__ML_" + uuid.uuid4().hex[:12] + "_"
+        while any(prefix in source for key,source in items):prefix="__ML_"+uuid.uuid4().hex[:12]+"_"
         records, restores = {}, {}
         for index, (key, source) in enumerate(items):
             tokens = []
@@ -267,8 +311,8 @@ class Translator:
                 tokens.append((marker, match.group(0)))
                 return marker
 
-            masked = TOKEN.sub(replace, source)
-            records[str(index)] = {"context_key": key, "text": masked}
+            masked = MASK_TOKEN.sub(replace, source)
+            records[str(index)] = {"context_key": getattr(self,'contexts',{}).get(key,key), "text": masked}
             restores[str(index)] = tokens
         system = (
             "你是星露谷物语 mod 本地化译者。把用户 JSON 的 text 从英语翻译为自然的简体中文。"
@@ -278,34 +322,85 @@ class Translator:
         )
         relevant = {term: value for term, value in glossary.items()
                     if any(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", source, re.IGNORECASE) for _, source in items)}
-        response = self._request([
+        messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": json.dumps({"glossary": relevant, "items": records}, ensure_ascii=False)},
-        ]).strip()
+        ]
+        return messages, prefix, records, restores
+
+    def translate(self, items, glossary):
+        if not items:
+            return []
+        messages, prefix, records, restores = self.prepare(items, glossary)
+        return self.decode(self._request(messages).strip(), items, prefix, records, restores)
+
+    def decode(self, response, items, prefix, records, restores, partial=False):
+        self.last_decode_diagnostics={}
         if response.startswith("```"):
-            response = re.sub(r"^```(?:json)?\s*", "", response)
+            response = re.sub(r"^```(?:json)?\s*", "", response, flags=re.IGNORECASE)
             response = re.sub(r"\s*```$", "", response)
         try:
             translations = json.loads(response, object_pairs_hook=_strict_pairs)
         except (ValueError, TypeError):
-            raise ProjectError("模型未返回有效 JSON，请重试或更换模型") from None
-        if not isinstance(translations, dict) or set(translations) != set(records):
-            raise ProjectError("模型返回条目缺失或多余，此批次未写入，请重试")
-        result = []
+            raise TranslationError('response_format', "模型未返回有效 JSON，请重试或更换模型") from None
+        if isinstance(translations, dict) and set(translations) == {'translations'}:
+            translations = translations['translations']
+        if isinstance(translations, list):
+            normalized = {}
+            for row in translations:
+                if not isinstance(row, dict) or set(row) not in ({'id', 'text'}, {'id', 'translation'}):
+                    raise TranslationError('response_format', '模型返回的 JSON 列表条目格式不兼容')
+                if type(row['id']) not in (str, int):
+                    raise TranslationError('response_format', '模型返回的条目 ID 无效')
+                key = str(row['id'])
+                if key in normalized:
+                    raise TranslationError('response_format', '模型返回重复条目 ID')
+                normalized[key] = row.get('translation', row.get('text'))
+            translations = normalized
+        if not isinstance(translations, dict) or (not set(translations).issubset(records) or (not partial and set(translations) != set(records))):
+            raise TranslationError('response_format', "模型返回条目缺失或多余，此批次未写入，请重试")
+        result, errors = [], {}
         for index, (key, source) in enumerate(items):
-            target = translations[str(index)]
-            if not isinstance(target, str):
-                raise ProjectError("模型返回的译文不是字符串，此批次未写入")
-            markers = re.findall(re.escape(prefix) + r"\d+_\d+__", target)
-            expected = [marker for marker, _ in restores[str(index)]]
-            if markers != expected or Counter(markers) != Counter(expected):
-                raise ProjectError("模型破坏了保护标记，此批次未写入，请重试")
-            for marker, token in restores[str(index)]:
-                target = target.replace(marker, token)
-            if "__ML_" in target:
-                raise ProjectError("模型返回未知保护标记，此批次未写入")
-            issues = validate_translation(source, target)
-            if issues:
-                raise ProjectError("译文检查失败：" + "；".join(issues))
-            result.append((key, source, target))
-        return result
+            try:
+                if str(index) not in translations:
+                    raise TranslationError('response_format', "Missing translation ID")
+                target = translations[str(index)]
+                if not isinstance(target, str):
+                    raise TranslationError('response_format', "模型返回的译文不是字符串，此批次未写入")
+                if partial and target.strip() == source.strip() and re.search('[A-Za-z]', source) and source.strip() not in ('API','SMAPI','GMCM','JSON','NPC','OK'):
+                    if 'gmcm/mod-name' in getattr(self,'contexts',{}).get(key,''):
+                        raise TranslationError('alias_required', '名称保持原文，需中文别名；不自动重试，不计作完成')
+                    raise TranslationError('unchanged', '模型未翻译此条文本，保留原文待重试')
+                markers = re.findall(re.escape(prefix) + r"\d+_\d+__", target)
+                expected = [marker for marker, _ in restores[str(index)]]
+                if markers != expected or Counter(markers) != Counter(expected):
+                    self.last_decode_diagnostics[key]={'expected':len(expected),'observed':len(markers),
+                        'missing':sum((Counter(expected)-Counter(markers)).values()),
+                        'extra':sum((Counter(markers)-Counter(expected)).values()),
+                        'order_changed':Counter(markers)==Counter(expected) and markers!=expected}
+                    raise TranslationError('structure', "模型破坏了保护标记，此批次未写入，请重试")
+                # Check unexpected model markers BEFORE restoring real tokens.
+                # Restored input may legitimately contain __ML_ (including
+                # 0.5.0's own split tokens), so it must not be rejected there.
+                residual=target
+                original=records[str(index)]['text']
+                for marker in expected:
+                    residual=residual.replace(marker,'')
+                    original=original.replace(marker,'')
+                if residual.count('__ML_') > original.count('__ML_'):
+                    raise TranslationError('structure', '模型返回未知保护标记，此条未写入')
+                for marker, token in restores[str(index)]:
+                    target = target.replace(marker, token)
+                if partial and target.strip()==source.strip() and re.search('[A-Za-z]',source) and not re.search('[\u4e00-\u9fff]',source) and source.strip() not in ('API','SMAPI','GMCM','JSON','NPC','OK'):
+                    if 'gmcm/mod-name' in getattr(self,'contexts',{}).get(key,''):
+                        raise TranslationError('alias_required', '名称保持原文，需中文别名；不自动重试，不计作完成')
+                    raise TranslationError('unchanged', '模型未翻译此条文本，保留原文待重试')
+                issues = validate_translation(source, target)
+                if issues:
+                    raise TranslationError('structure', "译文检查失败：" + "；".join(issues))
+                result.append((key, source, target))
+            except ProjectError as exc:
+                if not partial:
+                    raise
+                errors[key] = reason(exc)
+        return (result, errors) if partial else result

@@ -1,0 +1,16 @@
+{
+  "Pathoschild.Automate": {"source": "Automate", "target": "自动化（Automate）"},
+  "Pathoschild.ContentPatcher": {"source": "Content Patcher", "target": "内容补丁（Content Patcher）"},
+  "Esca.FarmTypeManager": {"source": "Farm Type Manager (FTM)", "target": "农场类型管理器（FTM）"},
+  "IsaacS.FriendsForever": {"source": "Friends Forever", "target": "友谊长存（Friends Forever）"},
+  "spacechase0.GenericModConfigMenu": {"source": "Generic Mod Config Menu", "target": "模组配置菜单（GMCM）"},
+  "DIGUS.MailFrameworkMod": {"source": "Mail Framework Mod", "target": "邮件框架（Mail Framework Mod）"},
+  "Bouhm.NPCMapLocations": {"source": "NPC Map Locations", "target": "NPC 地图位置"},
+  "dylanjames.skiporsocialize": {"source": "Skip or Socialize", "target": "跳过或社交（Skip or Socialize）"},
+  "spacechase0.SpaceCore": {"source": "SpaceCore", "target": "核心框架（SpaceCore）"},
+  "focustense.StardewUI": {"source": "StardewUI", "target": "界面框架（StardewUI）"},
+  "recon88.NoPamEnabling": {"source": "No Pam Enabling", "target": "不再纵容潘姆"},
+  "7eventy7.StandardizedSeedSprites": {"source": "Standardized Seed Sprites", "target": "统一种子图标"},
+  "jibb.minecarts": {"source": "Integrated Minecarts (CP Component)", "target": "综合矿车（CP 组件）"},
+  "jibb.minecarts.C": {"source": "Integrated Minecarts (SMAPI Component)", "target": "综合矿车（SMAPI 组件）"}
+}
