@@ -17,6 +17,7 @@ artifacts/*.json
 artifacts/*.zip
 artifacts/qa-*.png
 artifacts/bridge-probe-*/
+artifacts/portable-check/
 artifacts/coverage-*.csv
 artifacts/coverage-*.md
 artifacts/*reference.txt

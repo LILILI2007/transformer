@@ -34,7 +34,11 @@ jobs:
           python-version: '3.11'
       - run: ./scripts/build_windows.ps1 -PythonPath (Get-Command python).Source
         shell: pwsh
+      - run: ./scripts/verify_portable.ps1
+        shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
           name: ModLingo-Windows-x64
-          path: release/ModLingo-Windows-x64.zip
+          path: |
+            release/ModLingo-Windows-x64.zip
+            artifacts/portable-check/portable-acceptance.json

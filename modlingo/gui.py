@@ -538,7 +538,17 @@ def main():
     parser = argparse.ArgumentParser(description="ModLingo 星露谷 mod 翻译工作台")
     parser.add_argument("--smoke", action="store_true", help="无网络 GUI 启动检查")
     parser.add_argument("--editor", action="store_true", help="打开单 mod 编辑器")
+    parser.add_argument("--acceptance", action="store_true", help="离线样例首次使用验收，不使用真实游戏或API")
+    parser.add_argument("--acceptance-output", type=Path, help="保存离线验收摘要")
     args = parser.parse_args()
+    if args.acceptance:
+        from .acceptance import run_acceptance
+        result=run_acceptance()
+        if args.acceptance_output:
+            args.acceptance_output.parent.mkdir(parents=True,exist_ok=True)
+            args.acceptance_output.write_text(json.dumps(result,ensure_ascii=True,indent=2),encoding='utf-8')
+        print(json.dumps(result,ensure_ascii=True))
+        return
     enable_dpi_awareness()
     root = tk.Tk()
     if args.smoke:
