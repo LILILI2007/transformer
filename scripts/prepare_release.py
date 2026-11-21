@@ -2,10 +2,12 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
 import zipfile
+from urllib.parse import unquote, urlsplit
 
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT))
@@ -27,6 +29,17 @@ def main():
     if acceptance.get('external_windows_verified') or acceptance.get('game_display_verified'):
         raise ValueError('Automatic fixtures cannot claim external game acceptance')
     package=ROOT/'dist/ModLingo'
+    public_pages=['README.md','CONTRIBUTING.md','docs/玩家指南.md','docs/常见问题.md',
+                  'docs/开发指南.md','docs/兼容性清单.md','docs/Beta验收.md']
+    for name in public_pages:
+        page=package/name
+        for link in re.findall(r'!?\[[^\]]*\]\(([^)]+)\)',page.read_text(encoding='utf-8-sig')):
+            parsed=urlsplit(link.strip('<>'))
+            if parsed.scheme or not parsed.path:continue
+            target=(page.parent/unquote(parsed.path)).resolve()
+            try:target.relative_to(package.resolve())
+            except ValueError:raise ValueError('Documentation link escapes the package') from None
+            if not target.is_file():raise ValueError('Missing packaged documentation link: '+name)
     own_bridge=(ROOT/'bridge/package/ModLingo.Bridge.dll').read_bytes()
     embedded_bridge=(package/'_internal/bridge/package/ModLingo.Bridge.dll').read_bytes()
     rules=(ROOT/'modlingo/resource_rules.json').read_bytes()

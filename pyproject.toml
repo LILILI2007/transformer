@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "modlingo-stardew"
-version = "0.6.15"
+version = "0.6.16"
 description = "A local-first Chinese desktop translator for Stardew Valley standard i18n mods"
 readme = "README.md"
 requires-python = ">=3.9"

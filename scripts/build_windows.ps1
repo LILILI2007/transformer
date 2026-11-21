@@ -11,11 +11,15 @@ if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'bridge\package\ModLing
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 $releaseRoot = Join-Path $projectRoot 'release'
 New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $projectRoot 'README.md') -Destination (Join-Path $projectRoot 'dist\ModLingo\README.md') -Force
-Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE') -Destination (Join-Path $projectRoot 'dist\ModLingo\LICENSE') -Force
+foreach ($document in @('README.md','CHANGELOG.md','CONTRIBUTING.md','SECURITY.md','LICENSE')) {
+    Copy-Item -LiteralPath (Join-Path $projectRoot $document) -Destination (Join-Path $projectRoot 'dist\ModLingo') -Force
+}
 $documentationRoot = Join-Path $projectRoot 'dist\ModLingo\docs'
 New-Item -ItemType Directory -Path $documentationRoot -Force | Out-Null
-Get-ChildItem -LiteralPath (Join-Path $projectRoot 'docs') -Filter '*.md' | Copy-Item -Destination $documentationRoot -Force
+Copy-Item -Path (Join-Path $projectRoot 'docs\*') -Destination $documentationRoot -Recurse -Force
+$bridgeDocumentationRoot = Join-Path $projectRoot 'dist\ModLingo\bridge'
+New-Item -ItemType Directory -Path $bridgeDocumentationRoot -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $projectRoot 'bridge\README.md') -Destination $bridgeDocumentationRoot -Force
 $previewRoot = Join-Path $projectRoot 'dist\ModLingo\artifacts'
 New-Item -ItemType Directory -Path $previewRoot -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'artifacts\preview.png') -Destination $previewRoot -Force

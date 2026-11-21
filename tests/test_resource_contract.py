@@ -67,9 +67,9 @@ class ResourceContractTests(unittest.TestCase):
             with self.subTest(case=case):self.assertEqual(evaluate(case),case['expected'])
 
     def test_python_bridge_use_identical_production_contract(self):
-        local=Path(r'D:\chatgpt工作区\ModLingo-tools\dotnet6\dotnet.exe')
+        import os
         dotnet=None
-        for candidate in (shutil.which('dotnet'),str(local) if local.is_file() else None):
+        for candidate in (os.environ.get('MODLINGO_DOTNET'),shutil.which('dotnet')):
             if candidate and subprocess.run([candidate,'--list-sdks'],capture_output=True,text=True).stdout.strip():
                 dotnet=candidate;break
         if not dotnet:self.skipTest('需要 .NET 6 SDK 执行跨语言契约检查')

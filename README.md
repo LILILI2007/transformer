@@ -2,9 +2,9 @@
 
 为 Windows 玩家的星露谷 mod 翻译英语文字，安装可用中文，并保留备份以便恢复。支持标准 i18n、部分 Content Patcher 资源及配套 Bridge 可识别的界面文字。
 
-**Beta：0.6.15 / Bridge0.5.9。** 当前进入公开测试发布验收。第二台电脑和完整存档剧情的人工验证仍待完成，不承诺任意 mod 全量汉化或95%游戏内覆盖率。
+**Beta：0.6.16 / Bridge0.5.9。** 提供整轮用量限制、隔离配置自动化验收和玩家指南。第二台电脑和完整存档剧情的人工验证仍待完成，不承诺任意 mod 全量汉化或95%游戏内覆盖率。
 
-**[下载 Windows x64 测试版](https://github.com/LILILI2007/transformer/releases/tag/v0.6.15)** · [玩家指南](docs/玩家指南.md) · [常见问题](docs/常见问题.md) · [兼容性](docs/兼容性清单.md) · [反馈问题](https://github.com/LILILI2007/transformer/issues/new?template=bug.yml)
+**[下载 Windows x64 测试版](https://github.com/LILILI2007/transformer/releases/tag/v0.6.16)** · [玩家指南](docs/玩家指南.md) · [常见问题](docs/常见问题.md) · [兼容性](docs/兼容性清单.md) · [反馈问题](https://github.com/LILILI2007/transformer/issues/new?template=bug.yml)
 
 选择 `ModLingo-Windows-x64.zip`，完整解压后运行 `ModLingo/ModLingo.exe`，保留配套文件。**玩家无需安装 Python 或 Anaconda。** `ModLingo-source.zip` 是开发者源码包。
 
@@ -36,8 +36,8 @@ CP、DLL、XNB原文件不改写。输出可能写入i18n或Bridge字典。自�
 ## 费用、数据与恢复
 
 - 云端翻译会把待译文本和必要上下文发送给配置的服务商，费用由对应账号承担。
-- 输出Token上限不是整轮费用预算。开始前阅读请求计划；停止后已发送的请求仍可能计费。
-- 密钥不写入公开项目和翻译包；本机报告及备份可能含路径与mod文本，不要直接公开上传。
+- 默认整轮最多500次请求、200万token预算，含并发及重试；可在API设置调整。输入按保守预留估算，金额按填写单价估算，不是服务商账单硬限额。[费用规则](docs/API支持名单.md)
+- 密钥不写入公开项目和翻译包；反馈可用“导出脱敏摘要”。本机原始报告及备份可能含路径与mod文本，不要直接公开上传。
 - 安装前自动备份已有中文；使用“从结果记录恢复中文备份”。玩家后续修改会拒绝覆盖。
 - 默认数据在 `%LOCALAPPDATA%/ModLingo/`；升级保留该目录、更新Bridge并重新扫描，以复用合格缓存。
 

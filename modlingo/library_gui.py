@@ -144,6 +144,7 @@ class LibraryApp(APIVerification):
         ttk.Button(bottom, text='单 mod 编辑', command=self.editor).pack(side='left', padx=(0, 6))
         ttk.Button(bottom, text='查看结果名单', command=self.open_report).pack(side='left', padx=(0, 6))
         ttk.Button(bottom, text='恢复中文备份', command=self.rollback).pack(side='left')
+        ttk.Button(bottom, text='导出脱敏摘要', command=self.export_diagnostic).pack(side='left', padx=6)
         self.start_button = ttk.Button(bottom, text='开始翻译并安装', command=self.start, style='Accent.TButton')
         self.start_button.pack(side='right')
         self.stop_button = ttk.Button(bottom, text='停止并保存', command=self.request_stop, state='disabled')
@@ -399,6 +400,22 @@ class LibraryApp(APIVerification):
         else:
             messagebox.showinfo('结果记录', '完成批量处理后可打开结果。历史记录保存在：\n' + str(data_root() / 'reports'), parent=self.root)
 
+    def export_diagnostic(self):
+        if not self.report_path:
+            messagebox.showinfo('暂无结果', '完成一轮处理后可导出脱敏摘要。', parent=self.root)
+            return
+        target = filedialog.asksaveasfilename(title='导出供反馈使用的脱敏摘要',
+            initialfile='ModLingo-diagnostic.json', defaultextension='.json',
+            filetypes=[('脱敏摘要', '*.json')], parent=self.root)
+        if not target:return
+        try:
+            from .diagnostics import public_summary
+            summary = public_summary(read_jsonc(self.report_path))
+            Path(target).write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
+            self.status.set('脱敏摘要已导出；只含版本、计数和用量，不含路径、原文或密钥。')
+        except (OSError, ValueError, TypeError, ProjectError):
+            messagebox.showerror('导出失败', '无法读取结果或保存摘要，请检查文件权限。', parent=self.root)
+
     def rollback(self):
         if not self.guard():
             return
@@ -473,13 +490,16 @@ class LibraryApp(APIVerification):
                     if data['pending_fields']:
                         bridge=data.get('bridge',{})
                         bridge_note='\n伴随插件缺失：存在插件译文时会补齐程序。' if not bridge.get('ready',True) else ''
-                        approved=messagebox.askyesno('确认实际翻译用量',self.summary.get()+bridge_note+'\n初始预计约 %d 次 HTTP 请求；拆分与重试可能增加请求数。\n\n确认已退出游戏。继续将向 API 发送文本并可能计费，随后备份并安装已校验译文。' % data['estimated_initial_requests'],parent=self.root)
+                        approved=messagebox.askyesno('确认实际翻译用量',self.summary.get()+bridge_note+'\n初始预计约 %d 次 HTTP 请求；拆分与重试可能增加请求数。\n' % data['estimated_initial_requests']+data.get('usage_limits','')+'\n\n确认已退出游戏。继续将向 API 发送文本并可能计费，随后备份并安装已校验译文。',parent=self.root)
                         self.plan_decision.put(approved)
                 elif kind == 'engine_progress':
                     self.progress.configure(maximum=max(1,data['total']), value=data['completed']+data.get('failed',0))
                     eta='估算中' if data['eta_seconds'] is None else '%d 分 %d 秒' % divmod(data['eta_seconds'],60)
                     age='尚无响应' if data['last_response'] is None else '%d 秒前' % max(0,int(time.time()-data['last_response']))
                     self.status.set('%s · 片段完成 %d/%d · 失败 %d · 缓存 %d · HTTP 已发 %d / 处理中 %d · 重试等待 %d · 最近响应 %s · 本轮剩余 %s' % (data['phase'],data['completed'],data['total'],data.get('failed',0),data['cache_hits'],data['requests'],data['in_flight'],data['waiting_retry'],age,eta))
+                    if data.get('usage_budget'):
+                        usage=data['usage_budget']
+                        self.status.set(self.status.get()+' · token 已计入/预留 %d/%d' % (usage['charged_or_reserved_tokens'],usage['token_limit']))
                     if data.get('waiting_dependencies') or data.get('dependency_hits'):
                         self.status.set(self.status.get()+' · 等待名称 %d / 已回填 %d 片段' % (data.get('waiting_dependencies',0),data.get('dependency_hits',0)))
                 elif kind == 'report':

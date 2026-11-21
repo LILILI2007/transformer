@@ -373,7 +373,10 @@ class App(APIVerification):
             self.settings()
             return
         host = urlparse(self.config.base_url).hostname
-        if not messagebox.askyesno("开始大模型翻译", f"将向 {host} 的 {self.config.model} 模型发送 {len(items)} 条待译文本、翻译键及相关术语。\n约 {sum(len(s) for _, s in items)} 个原文字符（不是计费 token 数）。\n费用由你的服务账号承担；失败重试也可能计费。\n\n现有未变译文不会重发。是否开始？", parent=self.root):
+        from .usage_limits import limit_summary
+        confirmation = f"将向 {host} 的 {self.config.model} 模型发送 {len(items)} 条待译文本、翻译键及相关术语。\n"
+        confirmation += limit_summary(self.config)+'\n\n现有未变译文不会重发。是否开始？'
+        if not messagebox.askyesno("开始大模型翻译", confirmation, parent=self.root):
             return
         self.stop_event.clear()
         self._set_busy(True)

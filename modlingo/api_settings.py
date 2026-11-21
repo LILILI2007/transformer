@@ -67,7 +67,17 @@ class APISettingsDialog:
         self.disable_thinking = tk.BooleanVar(value=config.disable_thinking)
         self.thinking_box = ttk.Checkbutton(frame, text='关闭思考（仅 DeepSeek / 千问 / Kimi 可用，模型须支持）', variable=self.disable_thinking)
         self.thinking_box.pack(anchor='w', pady=(0, 9))
-        self.help_label = ttk.Label(frame, text='只支持非流式文本翻译，不支持必须流式或工具调用的模型。\n输出上限须符合模型限制，它不是费用预算。连接测试也会计费。\n当前支持名单经过协议测试；没有宣称所有厂商已做真实云端验收。',
+        self.run_requests = tk.StringVar(value=str(config.run_request_limit))
+        self.run_tokens = tk.StringVar(value=str(config.run_token_limit))
+        self.input_price = tk.StringVar(value='' if config.input_price_cny is None else str(config.input_price_cny))
+        self.output_price = tk.StringVar(value='' if config.output_price_cny is None else str(config.output_price_cny))
+        for title, var in [('本轮请求上限（包含所有重试）', self.run_requests),
+                           ('本轮 token 预算（输入保守估算）', self.run_tokens),
+                           ('输入单价：元 / 百万 token（留空为未知）', self.input_price),
+                           ('输出单价：元 / 百万 token（留空为未知）', self.output_price)]:
+            ttk.Label(frame, text=title).pack(anchor='w')
+            ttk.Entry(frame, textvariable=var).pack(fill='x', pady=(4, 9))
+        self.help_label = ttk.Label(frame, text='只支持非流式文本翻译，不支持必须流式或工具调用的模型。\n本轮限额覆盖并发及重试；重新开始、编辑器和连接测试分别计一轮。\n未知用量保留完整预留；输入按 UTF-8 字节加协议余量估算，非账单硬限额。\n单价请按控制台填写，连接测试也可能计费。厂商名单仅代表协议测试。',
                                     wraplength=560, style='Muted.TLabel')
         self.help_label.pack(anchor='w')
         def resize(event):
@@ -88,6 +98,8 @@ class APISettingsDialog:
         # Never silently reuse one vendor's key on another vendor's host.
         self.api_key.set('')
         self.workspace.set('')
+        self.input_price.set('')
+        self.output_price.set('')
         self.protocol.set(PROTOCOLS[config.protocol])
         self.disable_thinking.set(config.disable_thinking)
         self.update_controls()
@@ -102,12 +114,16 @@ class APISettingsDialog:
     def candidate(self):
         try:
             budget, timeout = int(self.max_tokens.get()), float(self.timeout.get())
+            requests, tokens = int(self.run_requests.get()), int(self.run_tokens.get())
+            prices = [float(var.get()) if var.get().strip() else None for var in (self.input_price, self.output_price)]
         except ValueError:
-            raise ProjectError('输出上限和超时必须是数字') from None
+            raise ProjectError('输出上限、超时、整轮限额和单价必须是数字') from None
         protocol = next(key for key, label in PROTOCOLS.items() if label == self.protocol.get())
         config = APIConfig(self.base_url.get().strip(), self.model.get().strip(), self.api_key.get().strip(), timeout,
                            provider=self.provider_id(), protocol=protocol, max_output_tokens=budget,
-                           workspace_id=self.workspace.get().strip(), disable_thinking=self.disable_thinking.get())
+                           workspace_id=self.workspace.get().strip(), disable_thinking=self.disable_thinking.get(),
+                           run_request_limit=requests, run_token_limit=tokens,
+                           input_price_cny=prices[0], output_price_cny=prices[1])
         config.endpoint()
         return config
 

@@ -6,6 +6,7 @@ from .provider import batches
 from .batching import wire_batches
 from .adaptive import FairQueue
 from .syntax import spans, kind_for, rebuild, validate_rebuilt
+from .usage_limits import UsageLimit
 
 async def translate_editor(items,mod_id,config,glossary,stop,storage,notify,concurrency=4):
     cache=Cache(storage)
@@ -32,18 +33,23 @@ async def translate_editor(items,mod_id,config,glossary,stop,storage,notify,conc
             session.contexts={identity:mod_id+' | '+rows[0][0] for identity,rows in lookup.items()}
             queue=FairQueue([pending])
             active=set()
+            paused=False
             while queue or active:
                 if stop.is_set():
                     for task in active:task.cancel()
                     await asyncio.gather(*active,return_exceptions=True)
                     break
-                while queue and len(active)<session.limit:
+                while queue and not paused and len(active)<session.limit:
                     _,batch=queue.pop(session)
                     active.add(asyncio.create_task(translate_recover(session,batch,glossary,success,failed)))
+                if not active:break
                 done,remaining=await asyncio.wait(active,timeout=.1,return_when=asyncio.FIRST_COMPLETED)
                 active=set(remaining)
                 for task in done:
                     try:task.result()
+                    except UsageLimit as exc:
+                        paused=True
+                        notify('errors',([k for k,_ in items],str(exc)))
                     except ServiceError as exc:
                         for other in active:other.cancel()
                         await asyncio.gather(*active,return_exceptions=True)

@@ -23,6 +23,7 @@ from .batching import fragment_groups, wire_batches, fits
 from .adaptive import FairQueue
 from .memory import memory_key,target_parts,already_chinese,whole_text
 from .test_budget import BudgetStop
+from .usage_limits import UsageLimit, limit_summary
 from .failures import Reason, reason, Circuits, CONTENT_CODES
 from .compatibility import display_target,minecart_labels
 
@@ -83,7 +84,7 @@ class Engine:
             except Exception as exc:
                 # _run closes its writer first. Preserve checkpoints and leave
                 # uncertain work explicit; never automatically resubmit it.
-                reason=str(exc) if isinstance(exc,BudgetStop) else '任务异常退出（%s）；已校验结果保存在缓存，未确认条目待手动重试' % type(exc).__name__
+                reason=str(exc) if isinstance(exc,(BudgetStop,UsageLimit)) else '任务异常退出（%s）；已校验结果保存在缓存，未确认条目待手动重试' % type(exc).__name__
                 return self.interrupted(reason,type(exc).__name__)
             finally:
                 beat.cancel()
@@ -333,6 +334,7 @@ class Engine:
                   'estimated_initial_requests':jobs.estimated_requests(max_chars,self.config.max_output_tokens,self.marker_cost) if bundles else 0,
                   'note':'片段数不是 HTTP 请求数；初始请求估算不含拆分、重试及批次调整。'}
             report['plan']=plan
+            plan['usage_limits']=limit_summary(self.config)
             plan['bridge']=plugin_status(self.mods)
             atomic_write(path.with_name(self.run_id+'.plan.json'),json.dumps(plan,ensure_ascii=False,indent=2).encode('utf-8'))
             self.notify('translation_plan',plan)
@@ -389,6 +391,7 @@ class Engine:
                 session.contexts=wire_contexts
                 active=set()
                 paused=''
+                usage_paused=False
                 def success(results,usage):
                     nonlocal network_failures
                     network_failures=0
@@ -499,13 +502,13 @@ class Engine:
                         self.trace({'event':'scope_pause','scope':list(scope),'reason':'连续四批没有有效新增译文'})
                 try:
                     while jobs or active:
-                        if self.stop.is_set() or paused:
+                        if self.stop.is_set() or (paused and not usage_paused):
                             for task in active:
                                 task.cancel()
                             await asyncio.gather(*active,return_exceptions=True)
                             active.clear()
                             break
-                        while jobs and len(active)<session.limit:
+                        while jobs and not paused and len(active)<session.limit:
                             i,items=jobs.pop(session)
                             if wire_scopes[items[0][0]] in circuits.paused:
                                 failed(items,Reason('同类内容连续失败，暂停此范围；其他 mod 继续','scope_paused'))
@@ -518,6 +521,9 @@ class Engine:
                         for task in done:
                             try:
                                 task.result()
+                            except UsageLimit as exc:
+                                paused=str(exc)
+                                usage_paused=True
                             except (ServiceError,BudgetStop) as exc:
                                 paused=str(exc)
                 finally:
@@ -610,6 +616,12 @@ class Engine:
             report['elapsed_seconds']=round(time.monotonic()-self.started,2)
             atomic_write(path,json.dumps(report,ensure_ascii=False,indent=2).encode('utf-8'))
             lines=['ModLingo 结果：已生成、已安装、游戏内生效分别验收；待处理原因见同名 JSON。']+[r['name']+' · '+r['status']+' · '+r['reason'] for r in report['success']+report['failure']]
+            if self.metrics.get('usage_budget'):
+                usage=self.metrics['usage_budget']
+                lines += [limit_summary(self.config), '本轮已发送 %d 次；已计入/预留 %d token；未知用量 %d 次。' % (
+                    usage['requests'],usage['charged_or_reserved_tokens'],usage['unknown_requests'])]
+                if usage['estimated_cny'] is not None:
+                    lines.append('按填写单价估算 %.6f 元（含未知用量预留，以服务商账单为准）。' % usage['estimated_cny'])
             atomic_write(path.with_suffix('.txt'),'\n'.join(lines).encode('utf-8'))
             return path,report
         finally:

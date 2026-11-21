@@ -4,6 +4,8 @@
 
 开发环境：Python 3.9+，GUI 需要 Tkinter，运行依赖 HTTPX；使用 `pip install -e .` 安装。Anaconda 环境与固定构建依赖见 `environment.yml` 和 `requirements-environment.lock.txt`。
 
+从空环境建立、解释器查找、Bridge SDK/游戏位置和发布验收见[开发指南](docs/开发指南.md)。脚本不要求固定D/E盘路径；本机历史实测脚本不属于通用开发入口。
+
 ```powershell
 python -m unittest discover -s tests -v
 python -m modlingo --smoke

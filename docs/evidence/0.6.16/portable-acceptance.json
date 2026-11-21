@@ -1,0 +1,23 @@
+{
+  "version": "0.6.16",
+  "passed": true,
+  "paid_model_calls": 0,
+  "transport": "httpx.MockTransport",
+  "fixture_only": true,
+  "game_loaded": false,
+  "cold_install": true,
+  "bridge_installed": true,
+  "same_run_backfilled_fields": 2,
+  "warm_requests": 0,
+  "changed_source_only_retranslated": true,
+  "existing_chinese_preserved": true,
+  "source_and_config_preserved": true,
+  "exact_backup_restore": true,
+  "later_player_edit_rejected": true,
+  "external_windows_verified": false,
+  "game_display_verified": false,
+  "gui_smoke_passed": true,
+  "runtime_without_dev_path": true,
+  "fresh_application_state": true,
+  "environment_scope": "same_host_isolated_process"
+}

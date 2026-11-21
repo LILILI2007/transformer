@@ -23,6 +23,12 @@ body:
     validations:
       required: true
   - type: checkboxes
+    id: diagnostic
+    attributes:
+      label: 可选脱敏摘要
+      options:
+        - label: 已在正文附上“导出脱敏摘要”的JSON（不附原始报告、备份或设置截图）
+  - type: checkboxes
     id: private
     attributes:
       label: 提交前检查

@@ -154,7 +154,18 @@ class LibraryGUITests(unittest.TestCase):
         dialog.base_url.set('http://127.0.0.1:8080/v1')
         dialog.model.set('local')
         dialog.protocol.set(PROTOCOLS['responses'])
+        dialog.run_requests.set('3')
+        dialog.run_tokens.set('12000')
+        dialog.input_price.set('0.5')
+        dialog.output_price.set('1')
         self.assertEqual(dialog.candidate().endpoint(), 'http://127.0.0.1:8080/v1/responses')
+        self.assertEqual(dialog.candidate().run_request_limit, 3)
+        self.assertEqual(dialog.candidate().run_token_limit, 12000)
+        self.assertEqual(dialog.candidate().input_price_cny, .5)
+        dialog.provider.set(PRESETS['qwen'].label)
+        dialog.choose_provider()
+        self.assertEqual(dialog.input_price.get(), '')
+        self.assertEqual(dialog.output_price.get(), '')
 
     def test_single_editor_uses_same_provider_configuration(self):
         from modlingo.gui import App

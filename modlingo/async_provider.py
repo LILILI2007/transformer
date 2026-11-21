@@ -11,6 +11,7 @@ from .provider import Translator, ModelResponseError, _strict_pairs
 from .batching import wire_batches, fits, output_cost
 from .adaptive import Adaptive,size_class
 from .test_budget import BudgetStop,BudgetWait
+from .usage_limits import UsageBudget, UsageLimit, UsageWait
 from .failures import TranslationError, Reason, reason as failure_reason
 
 class ServiceError(ProjectError):
@@ -36,6 +37,7 @@ class Session:
             if config.provider!='deepseek' or config.model!='deepseek-flash' or not config.disable_thinking or config.endpoint() not in ('https://api.deepseek.com/chat/completions','https://api.deepseek.com/v1/chat/completions'):
                 raise BudgetStop('限额测试只允许官方 DeepSeek Flash 非思考接口')
         self.test_budget=test_budget
+        self.usage_budget=UsageBudget(config)
         self.config, self.limit = config, concurrency
         self.maximum = concurrency
         self.condition = asyncio.Condition()
@@ -73,7 +75,8 @@ class Session:
 
     def stats(self):
         self.on_stats({'in_flight': self.network_active, 'requests': self.requests, 'waiting_retry': self.waiting,'waiting_budget':self.cost_waiters,
-                       'concurrency': self.limit, 'last_response': self.last_response})
+                       'concurrency': self.limit, 'last_response': self.last_response,
+                       'usage_budget': self.usage_budget.snapshot()})
 
     async def wait(self, seconds):
         self.waiting += 1
@@ -87,7 +90,7 @@ class Session:
             self.waiting -= 1
             self.stats()
 
-    async def post(self, translator, messages, budget):
+    async def post(self, translator, messages, budget, on_dispatch=lambda:None):
         try:
             endpoint, body, headers = translator.request_parts(messages)
         except ProjectError as exc:
@@ -110,10 +113,13 @@ class Session:
                     self.active += 1
                     break
             status, retry_after = None, None
-            started=time.monotonic();error='';raw=b'';finish=None;request_number=None;ticket=None;cost_wait_ms=0
+            started=time.monotonic();error='';raw=b'';finish=None;request_number=None;ticket=None;usage_ticket=None;cost_wait_ms=0
             translator.last_usage={}
             try:
                 if budget.remaining<=0:budget.consume()
+                while usage_ticket is None:
+                    try:usage_ticket=self.usage_budget.reserve(body,self.config.max_output_tokens)
+                    except UsageWait:await asyncio.sleep(.05)
                 if self.test_budget:
                     try:ticket=self.test_budget.reserve(messages,self.config.max_output_tokens)
                     except BudgetWait:
@@ -131,6 +137,7 @@ class Session:
                 self.requests += 1
                 request_number=self.requests
                 self.network_active+=1
+                on_dispatch()
                 self.stats()
                 async def receive():
                     async with self.client.stream('POST', endpoint, json=body, headers=headers) as response:
@@ -166,8 +173,13 @@ class Session:
                     raise ServiceError(status, 'API 请求失败（%d）：请检查协议、密钥、模型与访问权限' % status)
                 if status not in (408, 429, 500, 502, 503, 504, 529):
                     raise ProjectError('API 请求失败（%d），错误正文已隐藏' % status)
-            except (httpx.HTTPError, asyncio.TimeoutError):
+            except (httpx.HTTPError, asyncio.TimeoutError) as exc:
                 error='network_or_timeout'
+                # Windows timers can wake just before the wall-clock deadline.
+                # A timeout bounded by the remaining authorization is terminal;
+                # checking the clock alone could dispatch a second paid retry.
+                if isinstance(exc,asyncio.TimeoutError) and self.test_budget and request_timeout < self.config.timeout:
+                    raise BudgetStop('请求已达到测试剩余时间上限，停止重试') from None
                 if self.test_budget:self.test_budget.check()
                 if attempt == 2:
                     raise TranslationError('connection','连接失败或请求总时限已到，请检查网络后重试') from None
@@ -176,6 +188,8 @@ class Session:
                 raise
             finally:
                 settlement_error=None
+                if usage_ticket is not None:
+                    self.usage_budget.settle(usage_ticket,translator.last_usage)
                 if ticket:
                     try:self.test_budget.settle(ticket,translator.last_usage)
                     except BudgetStop as exc:settlement_error=exc
@@ -239,8 +253,7 @@ async def translate_recover(session, items, glossary, on_result, on_error, budge
             messages,prefix,records,restores=translator.prepare(current,glossary)
             if depth:
                 messages[0]["content"] += " 上次输出未通过校验。这次逐项翻译，英文名称需要中文显示；严格保留全部标记和条目 ID。"
-            on_attempt(current)
-            response=await session.post(translator,messages,budget)
+            response=await session.post(translator,messages,budget,on_dispatch=lambda:on_attempt(current))
             results,errors=translator.decode(response.strip(),current,prefix,records,restores,partial=True)
             repairs=on_result(results,translator.last_usage) if results else None
             repairs=repairs if isinstance(repairs,list) else []
@@ -278,7 +291,7 @@ async def translate_recover(session, items, glossary, on_result, on_error, budge
             else:
                 for reason in set(errors.values()):
                     on_error([item for item in failed if errors[item[0]]==reason],reason)
-        except (ServiceError,BudgetStop):
+        except (ServiceError,BudgetStop,UsageLimit):
             raise
         except ProjectError as exc:
             session.on_trace({'event':'decode_error','batch':budget.id,'mod_id':scope[0],'scope':list(scope),'code':getattr(exc,'code','validation'),

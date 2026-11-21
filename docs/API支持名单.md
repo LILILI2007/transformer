@@ -1,101 +1,38 @@
-# 0.5.0 更新
+# API兼容性与费用控制（0.6.16）
 
-厂商和协议名单保持下文所列。新增 HTTPX 异步连接池，12 个预设的本地真实 HTTP 合约测试通过，包含 DeepSeek、千问、Kimi、OpenAI Responses/Chat、Claude 原生 Messages；未使用真实厂商密钥。批量请求和连接验证支持本地取消；服务端已收到请求仍可能计费。每个原始批次（含拆分/HTTP 重试）最多 8 次，401/403/400/404 暂停任务。
+预设表示程序已实现对应协议，并通过模拟响应或本地HTTP测试。**不表示所有模型、地域和网关经过真实服务验收。** 连接验证只证明当前短文本请求成功；先少量试译。
 
-不代表所有厂商或所有模型兼容，仍须在软件中验证自己的配置。
+| 厂商/入口 | 协议 | 自动化证据 | 真实服务证据 |
+|---|---|---|---|
+| DeepSeek | Chat Completions，可关闭思考 | 本地HTTP和模拟测试 | 有历史限定测试；不作为本版全部模型验收 |
+| 千问北京/新加坡、Kimi | Chat Completions | 本地HTTP和模拟测试 | 本版待验收，地域密钥需匹配 |
+| OpenAI | Responses、Chat Completions独立预设 | 本地HTTP和模拟测试 | 本版待验收 |
+| Claude / Anthropic | 原生Messages | 本地HTTP和模拟测试 | 本版待验收 |
+| Gemini兼容接口、硅基流动、OpenRouter | Chat Completions | 本地HTTP和模拟测试 | 本版待验收 |
+| Ollama、LM Studio | 本机Chat Completions兼容接口 | 本地HTTP协议测试 | 真实本机模型待验收 |
+| 自定义 | 三种协议任选 | 通用边界测试 | 由使用者验证 |
 
----
+历史测试记录与当前代码版本不同，不能把历史结果扩展到新版本或其他模型。0.6.16的发布验收仅用自有样例和模拟模型，新增付费调用为零。
 
-# API 支持名单与兼容性说明（0.4.0）
+## 设置方法
 
-第四次 GitHub 更新重点增加厂商预设和协议适配。**支持指：按官方文档实现文本请求，并通过本地真实 HTTP 协议测试；不表示已经使用各厂商真实密钥验收，也不保证该厂商所有模型都可用。** 本次环境没有可用真实 API 凭据，商业云端测试全部为“待验收”。
+1. 选择实际提供密钥的服务商，填控制台模型ID及最终API地址，不填网页聊天地址。
+2. 保持协议匹配；第三方平台上的模型使用平台预设。切换厂商会清空密钥、模型及价格。
+3. 填写每次输出上限、整轮请求上限、整轮token预算；可选填当前输入/输出单价，单位为元/百万token。
+4. 保存并验证。仅保存不能解锁翻译，验证本身也可能收费。
 
-## 支持名单
+密钥仅保存在进程内存，或由`MODLINGO_API_KEY`环境变量提供。远程只允许HTTPS，本机允许loopback HTTP；拒绝转发重定向。不支持IAM、OAuth、任意认证头或网页登录态替代API密钥。
 
-| 设置中的厂商 | 协议 | 预设基础地址 | 主要注意事项 | 本地 HTTP / 真实服务 |
-|---|---|---|---|---|
-| DeepSeek | Chat Completions | https://api.deepseek.com | 按控制台填写模型 ID；默认保留模型思考设置 | 通过 / 待验收 |
-| 千问 / 百炼（北京） | Chat Completions | https://dashscope.aliyuncs.com/compatible-mode/v1 | 默认关闭思考；密钥与地域一致 | 通过 / 待验收 |
-| 千问 / 百炼（新加坡） | Chat Completions | https://dashscope-intl.aliyuncs.com/compatible-mode/v1 | 新加坡密钥；可换业务空间专属地址 | 通过 / 待验收 |
-| Kimi / 月之暗面 | Chat Completions | https://api.moonshot.cn/v1 | 使用开放平台密钥，不是网页会员凭据 | 通过 / 待验收 |
-| OpenAI · Responses | Responses | https://api.openai.com/v1 | 独立处理 input/output；不自动切换模型或协议 | 通过 / 待验收 |
-| OpenAI · Chat Completions | Chat Completions | https://api.openai.com/v1 | 使用 max_completion_tokens；仅限支持该接口的文本模型 | 通过 / 待验收 |
-| Claude / Anthropic · 原生 | Messages | https://api.anthropic.com/v1 | x-api-key、版本头、顶层 system、max_tokens；支持工作区 ID | 通过 / 待验收 |
-| Gemini · 兼容接口 | Chat Completions | https://generativelanguage.googleapis.com/v1beta/openai | Gemini API 密钥；不支持原生 generateContent 地址 | 通过 / 待验收 |
-| 硅基流动 | Chat Completions | https://api.siliconflow.cn/v1 | 模型 ID 通常含提供方前缀 | 通过 / 待验收 |
-| OpenRouter | Chat Completions | https://openrouter.ai/api/v1 | OpenRouter 自己的密钥，厂商/模型形式的 ID | 通过 / 待验收 |
-| Ollama（本机） | Chat Completions | http://127.0.0.1:11434/v1 | 先启动服务并下载模型；无鉴权时密钥可空 | 通过 / 本机模型待验收 |
-| LM Studio（本机） | Chat Completions | http://127.0.0.1:1234/v1 | 先加载模型及启动服务；按服务设置填写密钥 | 通过 / 本机模型待验收 |
-| 自定义接口 | 三种协议任选 | 用户填写 | 只保证程序支持这些协议，不对未知网关作保证 | 通用边界测试 / 由用户测试 |
+DeepSeek与千问默认关闭思考；Kimi按模型能力选择。必须流式、工具调用、图片/音频及未知网关认证不在范围。Responses和Chat是不同协议，不能混填完整地址。Claude多工作区密钥按需填写工作区ID。
 
-共 10 个厂商/本机服务、12 个预设，加 1 个自定义入口。第三方平台上的 Claude、千问等模型应选择**平台本身**的预设，不是模型原厂的预设。不要把厂商网页聊天地址填成 API 地址。
+## 整轮限额如何计算
 
-## 玩家如何配置
+默认一轮最多500次请求、2,000,000 token预算。所有批次、并发、HTTP重试及格式修复共用限额。每次请求先预留完整请求体UTF-8字节数加2048余量及最大输出token；不够时等待在途请求结算，仍不足则暂停。
 
-1. 在主界面或单 mod 编辑器打开 API 设置，选择实际提供密钥的厂商。
-2. 保留预设地址，或复制控制台给出的同协议最终基础地址。程序也接受完整接口地址；地址和所选协议不一致会拒绝。
-3. 从控制台填写准确模型 ID 与密钥。预设不自动选模型。切换厂商会清空密钥与模型，需重新填写。
-4. 输出上限默认 8192 tokens，须在该模型限制以内；0.4.2 起每次超时默认 120 秒，可调整至 1–600 秒。先少量试译。
-5. 点“保存并测试（可能计费）”并确认。0.4.1 起，只有看到“API 验证成功”弹窗和状态，翻译按钮才会解锁；仅保存、取消测试、验证失败均不能翻译。检查包含 JSON、占位符、换行及中文输出。主界面也可点“验证 API”重试。重新保存配置或重启程序后需再验证。通过只代表本次短文本请求成功，随后先勾选少量 mod 验证。
+取得有效用量后按服务商返回值结算，未知、取消或网络失败保留完整预留，不自动当成免费。服务商报告超过预留时停止新请求并记入报告。已经发送的请求可能收费，预算暂停时会收取已返回的合格译文并保留进度。
 
-密钥只存于进程内存，也可从 MODLINGO_API_KEY 环境变量读取，不随项目、翻译包或结果记录保存。远程只允许 HTTPS；HTTP 仅限 localhost/loopback，不跟随重定向。自定义协议入口支持 Chat Completions、Responses、Claude Messages，不支持任意请求头、任意认证协议或 Azure/Bedrock/Vertex 的专用认证流程。
+**输入预留是保守估算，不是所有模型的精确分词。** 服务商额外开销、隐藏思考和不遵守输出限制的网关可能产生偏差。人民币金额按填写单价估算，缓存输入按完整输入价处理，不保证与账单一致；未知价格不显示“免费”。需要人民币硬限额时，请同时使用服务商控制台额度。
 
-## 千问、思考模式与地域
+每次点击开始、单mod编辑器和连接验证分别计一轮；重启、重新开始会重置本轮限额，不是账号累计限额。达到上限后检查报告再决定是否开始下一轮。
 
-千问预设默认发送 enable_thinking=false，以适配可关闭思考的非流式文本模型。必须思考或只支持流式的模型不在当前范围；请选可关闭思考的模型。北京和新加坡密钥不能混用。
-
-官方已建议使用业务空间专属地址，旧 dashscope 域名仍可使用。例如北京可以将基础地址替换为 https://你的WorkspaceId.cn-beijing.maas.aliyuncs.com/compatible-mode/v1，新加坡使用对应 ap-southeast-1 地址；复制控制台实际值，不能保留模板字样。
-
-DeepSeek、Kimi 默认不发送思考开关，保留模型默认行为。可按模型文档勾选关闭思考，发送 thinking.type=disabled；仅在该模型支持关闭时使用。该选项不会发送给其他厂商。程序只取最终文本，不把 reasoning_content、Claude thinking 或 Responses reasoning 当作译文。
-
-## Claude 与 OpenAI
-
-Claude 使用原生 Messages，无需依赖兼容层。多工作区密钥需填写 anthropic-workspace-id；单工作区密钥可留空。本工具不支持云平台 IAM 或 OAuth 登录代替 API 密钥。
-
-OpenAI 的 Responses 和 Chat Completions 分别列为预设，不能混填完整地址。Responses 使用 instructions/input/max_output_tokens/store:false，读取 output 数组中的最终文本；Chat 使用 messages/max_completion_tokens。均不添加 temperature，以减少不接受该参数的模型发生配置错误。
-
-## 兼容性边界与失败
-
-- 只处理非流式文本输出，不支持必须流式的模型、图片/音频、工具调用或登录态聊天接口。
-- 截断、内容过滤、拒绝、工具结果、空文本、只有思考无最终文本均不写入译文，即使截断片段碰巧是合法 JSON。
-- 401/403/404/429 以及参数/协议错误 400 会停止剩余批量请求并逐个记入名单，避免配置错误重复消费。
-- 408/429/500/502/503/504/529 和网络错误最多三次尝试；重试可能计费。错误正文不写日志或报告。
-- 不会自动换厂商、模型或协议来“试通”，避免额外调用及数据发往非预期目的地。
-- 厂商协议兼容不代表模型始终返回合法 JSON、翻译语义准确、账户有额度或网络地区可用。网页会员也不保证包含 API 额度。
-
-## 本次如何测试
-
-使用独立于运行时代码的预期请求路径，通过本机 HTTP 服务实际收发请求。逐项核对 12 个预设的 URL、鉴权、请求字段、非流式开关及三种响应结构。覆盖占位符和换行往返、文本块、思考分离、截断拒绝、鉴权错误脱敏、重定向不转发凭据、Claude 529 限次重试、协议地址冲突、输出/超时限制以及设置界面切换行为。
-
-测试入口：python -m unittest discover -s tests -v。测试不读取真实服务密钥，不调用商业模型，不产生 API 费用。本次本地 90 项测试：89 项通过、1 项链接测试因系统权限跳过；云端结果见 Actions 和验证记录。
-
-## 自愿运行真实服务验收
-
-便携版用户可使用界面的“保存并测试”。开发者可在源码环境中用 scripts/check_live_api.py 发送三条原创短文本（占位符、换行、游戏标记），并保存脱敏检查结果和服务返回的 token 用量。
-
-先自行将对应密钥放进环境变量，再运行，例如：
-
-```powershell
-python scripts/check_live_api.py --provider deepseek --model 你的模型ID --key-env DEEPSEEK_API_KEY --allow-paid
-python scripts/check_live_api.py --provider qwen --model 你的模型ID --key-env DASHSCOPE_API_KEY --allow-paid
-python scripts/check_live_api.py --provider kimi --model 你的模型ID --key-env MOONSHOT_API_KEY --allow-paid
-python scripts/check_live_api.py --provider openai --model 你的模型ID --key-env OPENAI_API_KEY --allow-paid
-python scripts/check_live_api.py --provider claude --model 你的模型ID --key-env ANTHROPIC_API_KEY --allow-paid
-```
-
-没有 --allow-paid 会直接退出，不发送网络请求。需要时用 --base-url 指定专属地址、--workspace-id 指定 Claude 工作区。结果默认存本机 ModLingo/api-checks，记录厂商、协议、模型、主机、用量及检查结果，不含密钥、原始响应或译文。真实验收只覆盖该账号、地址和模型的一次测试，不能推导整个厂商全部可用。
-
-## 官方依据
-
-核对日期：2026-10-16。模型列表、地址和服务政策变化时应重新核验。
-
-- [DeepSeek 官方接口](https://api-docs.deepseek.com/)
-- [千问兼容接口与地域](https://help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope)、[思考模式](https://help.aliyun.com/zh/model-studio/deep-thinking/)
-- [Kimi Chat Completions](https://platform.kimi.com/docs/api/chat)
-- [OpenAI 文本生成与 Responses](https://developers.openai.com/api/docs/guides/text)
-- [Claude Messages](https://platform.claude.com/docs/en/api/messages/create)、[鉴权及工作区](https://platform.claude.com/docs/en/api/overview)
-- [Gemini 兼容接口](https://ai.google.dev/gemini-api/docs/openai)
-- [硅基流动 Chat Completions](https://docs.siliconflow.cn/docs/api/chat-completions-post)
-- [OpenRouter 接入](https://openrouter.ai/developers)
-- [Ollama 兼容协议](https://docs.ollama.com/api/openai-compatibility)
-- [LM Studio 兼容协议](https://lmstudio.ai/docs/developer/openai-compat)
+单个原始批次仍最多8次请求，HTTP最多3次；配置/授权错误暂停，限流会退避并减少并发。拒绝、工具输出、截断及不合格译文不会写入中文文件。

@@ -29,6 +29,7 @@ class ProviderPreset:
     disable_thinking: bool = False
 
 
+
 PRESETS = {
     'deepseek': ProviderPreset('DeepSeek', 'https://api.deepseek.com', note='填写控制台模型 ID；例如 deepseek-flash。普通翻译默认关闭思考以减少等待。', disable_thinking=True),
     'qwen': ProviderPreset('千问 / 百炼（北京）', 'https://dashscope.aliyuncs.com/compatible-mode/v1', note='密钥必须与地域一致；可换为控制台提供的业务空间专属地址。选支持关闭思考的文本模型。', disable_thinking=True),
@@ -63,8 +64,14 @@ class APIConfig:
     max_output_tokens: int = 8192
     workspace_id: str = ''
     disable_thinking: bool = False
+    run_request_limit: int = 500
+    run_token_limit: int = 2000000
+    input_price_cny: float = None
+    output_price_cny: float = None
 
     def endpoint(self, validate_credentials=True) -> str:
+        from .usage_limits import validate_limits
+        validate_limits(self)
         if self.protocol not in PROTOCOLS or self.provider not in PRESETS:
             raise ProjectError('未知厂商或协议，请重新选择 API 配置')
         if self.provider != 'custom' and self.protocol != PRESETS[self.provider].protocol:
@@ -162,8 +169,10 @@ class ModelResponseError(ProjectError):
 
 class Translator:
     def __init__(self, config: APIConfig):
+        from .usage_limits import UsageBudget
         self.config = config
         self.last_usage = {}
+        self.usage_budget = UsageBudget(config)
 
     def request_parts(self, messages):
         """Build the exact HTTP body and headers without performing I/O."""
@@ -202,7 +211,7 @@ class Translator:
             raise ProjectError('API 返回错误响应；请检查模型、额度和配置（错误正文已隐藏）')
         usage=payload.get('usage',{})
         if isinstance(usage,dict):
-            self.last_usage={key:value for key,value in usage.items() if key in ('input_tokens','output_tokens','prompt_tokens','completion_tokens','total_tokens','prompt_cache_hit_tokens','prompt_cache_miss_tokens') and type(value) is int and value>=0}
+            self.last_usage={key:value for key,value in usage.items() if key in ('input_tokens','output_tokens','prompt_tokens','completion_tokens','total_tokens','prompt_cache_hit_tokens','prompt_cache_miss_tokens','cache_read_input_tokens','cache_creation_input_tokens') and type(value) is int and value>=0}
             details=usage.get('completion_tokens_details') or usage.get('output_tokens_details') or {}
             reasoning=details.get('reasoning_tokens') if isinstance(details,dict) else None
             if type(reasoning) is int and reasoning>=0:self.last_usage['reasoning_tokens']=reasoning
@@ -270,6 +279,8 @@ class Translator:
         body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         request = Request(endpoint, data=body, headers=headers, method="POST")
         for attempt in range(3):
+            ticket = self.usage_budget.reserve(payload, self.config.max_output_tokens)
+            self.last_usage = {}
             try:
                 with build_opener(NoRedirect()).open(request, timeout=self.config.timeout) as response:
                     raw = response.read(2 * 1024 * 1024 + 1)
@@ -294,6 +305,8 @@ class Translator:
                 raise
             except (ValueError, KeyError, IndexError, TypeError, AttributeError):
                 raise ProjectError("API 响应格式不兼容，或返回内容不完整") from None
+            finally:
+                self.usage_budget.settle(ticket, self.last_usage)
 
     def prepare(self, items, glossary):
         # DeepSeek's long random nonce is repeated in every protection marker,
