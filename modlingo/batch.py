@@ -78,13 +78,14 @@ def check_game_stopped():
 
 def validate_item(item, mods):
     folder, mods = Path(os.path.abspath(item.folder)), Path(os.path.abspath(mods))
-    if folder.resolve() == mods.resolve() or not within(folder, mods):
+    resolved_mods = mods.resolve()
+    if folder.resolve() == resolved_mods or not within(folder, mods):
         raise ProjectError('mod 不在锁定的 Mods 目录内')
     current = folder
     while True:
         if linked(current):
             raise ProjectError('目录变成链接或目录联接，已停止写入')
-        if current == mods:
+        if current.resolve() == resolved_mods:
             break
         if current == current.parent:
             raise ProjectError('目录不在锁定的 Mods 内')

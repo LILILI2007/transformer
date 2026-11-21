@@ -29,7 +29,7 @@
     "failures": 0,
     "errors": 0,
     "skipped": 1,
-    "seconds": 36.328,
+    "seconds": 38.062,
     "passed": true
   },
   "old_python_paths_absent": true,

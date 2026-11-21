@@ -135,7 +135,7 @@ class MinecartResourceTests(unittest.TestCase):
             with self.subTest(alternate=alternate):
                 p=self.pack('Source'+str(len(list(self.mods.iterdir()))),uid='Pack.'+str(len(list(self.mods.iterdir()))),
                     changes=[self.definition('码头'),self.definition(alternate,network='Other')])
-                names=resolve_names([extract(next(i for i in scan_mods(self.mods) if i.folder==p))])
+                names=resolve_names([extract(next(i for i in scan_mods(self.mods) if i.folder==p.resolve()))])
                 self.assertNotIn('Mod.Dock',names.names)
                 self.assertIn('Mod.Dock',names.unresolved)
 

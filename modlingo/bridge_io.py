@@ -161,12 +161,15 @@ def restore_dictionary(receipt_path, data):
     check_game_stopped()
     target,mods=Path(data['target']),Path(data['mods'])
     expected=bridge_directory(mods)/'translations'/(digest(data['mod_id'])[:32]+'.json')
-    if target != expected or not within(target,mods) or data.get('restored'):
+    if target.resolve() != expected.resolve() or not within(target,mods) or data.get('restored'):
         raise ProjectError('译文恢复路径或状态无效')
     current=target
-    while current != mods:
+    resolved_mods=mods.resolve()
+    while True:
         if linked(current):
             raise ProjectError('恢复路径含链接')
+        if current.resolve()==resolved_mods:break
+        if current==current.parent:raise ProjectError('恢复路径不在锁定的 Mods 内')
         current=current.parent
     if not target.exists() or source_hash(target.read_text(encoding='utf-8')) != data['installed_sha']:
         raise ProjectError('译文文件已有后续修改，未覆盖')

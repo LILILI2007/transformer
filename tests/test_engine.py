@@ -228,15 +228,22 @@ class EngineTests(unittest.TestCase):
 
     def test_stop_cancels_waiting_requests_without_dispatching_more(self):
         self.mod('A',200)
-        stop=threading.Event();calls=0
+        stop=threading.Event();calls=0;stopped_at=[];cancelled_at=[]
         async def handler(request):
             nonlocal calls
             calls+=1
+            if not stopped_at:stopped_at.append(time.monotonic())
             stop.set()
-            await asyncio.sleep(5)
+            try:
+                await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                cancelled_at.append(time.monotonic())
+                raise
             return httpx.Response(200,json=envelope(request))
-        started=time.monotonic();_,report=self.run_engine(handler,stop)
-        self.assertLess(time.monotonic()-started,1)
+        _,report=self.run_engine(handler,stop)
+        self.assertTrue(stopped_at)
+        self.assertEqual(len(cancelled_at),calls)
+        self.assertLess(max(cancelled_at)-stopped_at[0],1)
         self.assertLessEqual(calls,4)
         self.assertTrue(any(r['status']=='已暂停' for r in report['failure']))
 
