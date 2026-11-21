@@ -1,6 +1,7 @@
 # Dot-source from project tools. Explicit overrides always win.
 function Use-ModLingoEnvironment {
-    param([string]$PythonPath)
+    param([string]$PythonPath, [switch]$ForBuild)
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
     if (-not $PythonPath) { $PythonPath = $env:MODLINGO_PYTHON }
     $projectWorkspacePath = Split-Path -Parent $PSScriptRoot
     if (-not $PythonPath -and $env:MODLINGO_CONDA_ROOT) {
@@ -31,7 +32,7 @@ function Use-ModLingoEnvironment {
         $PythonPath = $candidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
     }
     if (-not $PythonPath -or -not (Test-Path -LiteralPath $PythonPath -PathType Leaf)) {
-        throw 'Python environment not found. Activate modlingo or .venv, or set MODLINGO_PYTHON. See docs/开发指南.md.'
+        throw 'Python environment not found. Activate modlingo or .venv, or set MODLINGO_PYTHON. See README.md.'
     }
     $pythonExecutablePath = (Resolve-Path -LiteralPath $PythonPath).Path
     $pythonEnvironmentPath = Split-Path -Parent $pythonExecutablePath
@@ -55,10 +56,15 @@ function Use-ModLingoEnvironment {
         $env:VIRTUAL_ENV = $pythonEnvironmentPath
     }
     $env:PYTHONNOUSERSITE = '1'
+    $env:PYTHONIOENCODING = 'utf-8'
     $env:PIP_DISABLE_PIP_VERSION_CHECK = '1'
     $certificatePath = Join-Path $pythonEnvironmentPath 'Library\ssl\cacert.pem'
     if (Test-Path -LiteralPath $certificatePath) { $env:SSL_CERT_FILE = $certificatePath }
-    & $pythonExecutablePath -I -c 'import sys; assert sys.version_info >= (3,9), "Python 3.9+ required"; import httpx, tkinter'
-    if ($LASTEXITCODE -ne 0) { throw 'Python 3.9+, HTTPX and Tk are required. Install the project dependencies first; see docs/开发指南.md.' }
+    & $pythonExecutablePath -I -c 'import sys; assert sys.version_info >= (3,9), "Python 3.9+ required"; import tkinter'
+    if ($LASTEXITCODE -ne 0) { throw 'Python 3.9+ and Tk are required. See README.md.' }
+    if (-not $ForBuild) {
+        & $pythonExecutablePath -I -c 'import httpx'
+        if ($LASTEXITCODE -ne 0) { throw 'Install the project dependencies first: python -m pip install -e .; see README.md.' }
+    }
     return $pythonExecutablePath
 }

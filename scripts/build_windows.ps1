@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot
 . (Join-Path $PSScriptRoot 'project_environment.ps1')
-$buildPython = Use-ModLingoEnvironment -PythonPath $PythonPath
+$buildPython = Use-ModLingoEnvironment -PythonPath $PythonPath -ForBuild
 & $buildPython -m pip install -r requirements-build.txt
 if ($LASTEXITCODE -ne 0) { throw 'Cannot install build dependencies.' }
 if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'bridge\package\ModLingo.Bridge.dll'))) { throw 'Build the companion with scripts/build_bridge.ps1 first.' }

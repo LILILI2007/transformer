@@ -20,19 +20,32 @@ class EnvironmentTests(unittest.TestCase):
             for name in ('MODLINGO_PYTHON', 'MODLINGO_CONDA_ROOT', 'CONDA_EXE', '_CONDA_EXE'):
                 environment.pop(name, None)
             runner = root / 'probe.ps1'
-            runner.write_text('. "' + str(script) + '"\nUse-ModLingoEnvironment', encoding='utf-8-sig')
+            runner.write_text('$ErrorActionPreference="Stop"\n. "' + str(script) + '"\nUse-ModLingoEnvironment', encoding='utf-8-sig')
             result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File', str(runner)],
-                capture_output=True, text=True, env=environment, timeout=30)
+                capture_output=True, text=True, encoding='utf-8', env=environment, timeout=30)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(Path(result.stdout.strip()).resolve(), (root / '.venv/Scripts/python.exe').resolve())
+            empty = root / 'build-only/Scripts/python.exe'
+            subprocess.run([sys.executable, '-m', 'venv', '--without-pip', str(root / 'build-only')], check=True, capture_output=True, timeout=30)
+            runner.write_text('$ErrorActionPreference="Stop"\n. "' + str(script) +
+                              '"\nUse-ModLingoEnvironment -ForBuild -PythonPath "' + str(empty) + '"', encoding='utf-8-sig')
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File', str(runner)],
+                capture_output=True, text=True, encoding='utf-8', env=environment, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(Path(result.stdout.strip()).resolve(), empty.resolve())
+            runner.write_text(runner.read_text(encoding='utf-8-sig').replace(' -ForBuild', ''), encoding='utf-8-sig')
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File', str(runner)],
+                capture_output=True, text=True, encoding='utf-8', env=environment, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('Install the project dependencies', result.stderr)
 
     def test_invalid_explicit_override_does_not_fall_back(self):
         script = Path(__file__).resolve().parents[1] / 'scripts/project_environment.ps1'
         # Pass a script file so shell parsing cannot reinterpret the path.
         with tempfile.TemporaryDirectory() as directory:
             runner = Path(directory) / 'probe.ps1'
-            runner.write_text('. "' + str(script) + '"\nUse-ModLingoEnvironment -PythonPath "Z:\\missing-modlingo\\python.exe"', encoding='utf-8-sig')
+            runner.write_text('$ErrorActionPreference="Stop"\n. "' + str(script) + '"\nUse-ModLingoEnvironment -PythonPath "Z:\\missing-modlingo\\python.exe"', encoding='utf-8-sig')
             result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File', str(runner)],
-                capture_output=True, text=True, timeout=30)
+                capture_output=True, text=True, encoding='utf-8', timeout=30)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('Python environment not found', result.stderr)
