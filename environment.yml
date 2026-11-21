@@ -1,0 +1,11 @@
+name: modlingo
+channels:
+  - https://repo.anaconda.com/pkgs/main
+  - nodefaults
+dependencies:
+  - python=3.9
+  - pip
+  - tk
+  - pip:
+      - -r requirements-environment.lock.txt
+      - -e .

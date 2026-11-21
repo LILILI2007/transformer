@@ -1,0 +1,43 @@
+{
+  "version": "0.6.15",
+  "bridge_version": "0.5.9",
+  "date": "2026-11-21",
+  "regression": {
+    "version": "0.6.15",
+    "tests": 322,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "seconds": 36.328,
+    "passed": true
+  },
+  "dependency_scenarios": 14,
+  "cross_language_cases": 397,
+  "extraction_rules": {
+    "version": 1,
+    "hash": "fa393601a29b2065a817a85a519503b5595433339b6e60c17b9250fd111f6a57"
+  },
+  "game_rules_hash_matches": true,
+  "exe_smoke_exit_code": 0,
+  "paid_api_calls": 0,
+  "player_mods_written": false,
+  "save_loaded": false,
+  "full_library_acceptance": false,
+  "unchanged_fixture_config_files": 86,
+  "qualified_records": 70578,
+  "total_records": 80241,
+  "identified_record_coverage_percent": 87.9575,
+  "offline_dependencies": {
+    "same_run_backfilled_fields": 0,
+    "pending_fields": 9304,
+    "provider_fields": 177,
+    "edges": 9551,
+    "refreshes": 2,
+    "pending_reasons": {
+      "\u7f3a\u5c11\u540d\u79f0\u63d0\u4f9b\u8005\u6216\u552f\u4e00\u53ef\u9760\u7684\u4e2d\u6587\u663e\u793a\u540d\u79f0": 8404,
+      "\u52a8\u6001\u6216\u81ea\u5b9a\u4e49\u663e\u793a\u540d\u79f0\uff0c\u4fdd\u7559\u539f\u503c": 900
+    }
+  },
+  "resource_name_reuse_fields": 300,
+  "note": "Offline warm snapshot, no new model translations; same-run new-result scheduling verified using mock responses. Unsupported asset captures are filtered by the shared contract. This is not full-game or semantic-quality acceptance."
+}

@@ -8,39 +8,12 @@ from .core import Project, Entry, ProjectError, read_jsonc, locale_paths, merge_
 from .syntax import spans, Span,kind_for
 from .discovery import linked, within
 
-VISIBLE_FIELDS = {'DisplayName', 'Description', 'Text', 'Title', 'Dialogue', 'Question', 'Objective', 'CompletionMessage', 'DisplayDescription', 'DisplayTitle'}
-TEXT_ASSETS = ('Characters/Dialogue/', 'Strings/', 'Data/mail', 'Data/Events/', 'Data/Quests', 'Data/Objects', 'Data/BigCraftables', 'Data/Weapons', 'Data/Furniture', 'Data/Buildings', 'Data/Characters', 'Data/SpecialOrders', 'Data/Movies', 'Data/Festivals', 'Data/NPCGiftTastes', 'Data/EngagementDialogue', 'Data/ExtraDialogue', 'Data/SecretNotes')
-KNOWN_LANGUAGES = frozenset(('de','en','es','fr','hu','it','ja','ko','pt','ru','tr','zh'))
-TEXT_ASSETS=TEXT_ASSETS+('Data/WorldMap',)
+from .resource_rules import (VISIBLE_FIELDS, TEXT_ASSETS, KNOWN_LANGUAGES, canonical_asset,
+    unrelated_language, text_path as resource_text_path, list_ids, asset_rule, RULES)
 
-def world_map_path(pointer,strict_ids=True):
-    if len(pointer)==4 and str(pointer[1]).casefold()=='mapareas' and str(pointer[3]).casefold()=='scrolltext':
-        path=[pointer[0],'MapAreas',pointer[2],'ScrollText'];ids=path[::2]
-    elif len(pointer)==6 and str(pointer[1]).casefold()=='mapareas' and str(pointer[3]).casefold()=='tooltips' and str(pointer[5]).casefold()=='text':
-        path=[pointer[0],'MapAreas',pointer[2],'Tooltips',pointer[4],'Text'];ids=path[::2]
-    else:return None
-    return path if not strict_ids or all(isinstance(key,str) and re.fullmatch(r'[A-Za-z0-9_.-]+',key) for key in ids) else None
 
-def unrelated_language(change):
-    """Only literal, known foreign languages. Never evaluate arbitrary CP tokens."""
-    if change.get('Action') not in ('Include','EditData','Load','EditImage','EditMap'):
-        return ''
-    when=change.get('When')
-    language=when.get('Language') if isinstance(when,dict) else None
-    if isinstance(language,str):
-        values=[value.strip() for value in language.split(',')]
-        if values and all(value in KNOWN_LANGUAGES for value in values) and not set(values)&{'en','zh'}:
-            return 'When.Language='+','.join(values)
-    locale=change.get('TargetLocale')
-    if change.get('Action')=='EditData' and isinstance(locale,str) and locale in KNOWN_LANGUAGES-{'en','zh'}:
-        return 'TargetLocale='+locale
-    return ''
-
-def canonical_asset(asset):
-    for prefix in TEXT_ASSETS:
-        if asset.casefold().startswith(prefix.casefold()):
-            return prefix + asset[len(prefix):]
-    return asset
+def world_map_path(pointer, strict_ids=True):
+    return resource_text_path('Data/WorldMap', pointer, strict_ids)
 
 @dataclass
 class TextUnit:
@@ -79,6 +52,8 @@ class Bundle:
     source_snapshots: dict = field(default_factory=dict)
     excluded_patches: list = field(default_factory=list)
     pending_captures: list = field(default_factory=list)
+    minecart_names: list = field(default_factory=list)
+    minecart_name_observations: list = field(default_factory=list)
 
 def source_hash(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
@@ -251,13 +226,16 @@ def extract(item, bridge_captures=None):
                     if asset.startswith('Data/WorldMap') and asset!='Data/WorldMap':
                         unknown.append('未识别数据资源需游戏采集：'+asset)
                         continue
+                    if asset.startswith('Data/Minecarts') and asset!='Data/Minecarts':
+                        unknown.append('未识别数据资源需游戏采集：'+asset)
+                        continue
                     if asset == 'spacechase0.SpaceCore/TextureOverrides' or asset == 'Data/ChairTiles':
                         continue
                     if action=='Load' and not asset.startswith(TEXT_ASSETS) and str(change.get('FromFile','')).lower().endswith(('.png','.jpg','.jpeg','.webp','.bmp')):
                         # Known image files have no extractable text. This is
                         # excluded image/OCR work, not an unsupported text mod.
                         continue
-                    if '{{' in asset or not asset.startswith(TEXT_ASSETS):
+                    if not asset_rule(asset):
                         unknown.append('未识别数据资源需游戏采集：' + asset)
                         continue
                     visual_only = False
@@ -283,23 +261,51 @@ def extract(item, bridge_captures=None):
             elif action not in ('EditImage', 'EditMap'):
                 unknown.append('未识别补丁动作：' + action)
     def walk_values(value, asset, pointer, origin):
+        if len(pointer)>RULES['max_depth']:return
+        if asset=='Data/Minecarts':
+            from .minecarts import display_path, name_reference
+            # A removed destination must not leave another static definition
+            # looking authoritative across an unknown condition.
+            candidate=pointer+['DisplayName'] if value is None and len(pointer)==3 else pointer
+            if reference:=name_reference(candidate,value,origin):
+                bundle.minecart_names.append(reference)
+                if reference['kind']!='literal':
+                    if reference['kind']=='unresolved':
+                        unknown.append('矿车动态或自定义显示名称需游戏确认；保留实际配置值')
+                    return
         if isinstance(value, dict):
             for key, child in value.items():
                 walk_values(child, asset, pointer + [key], origin)
         elif isinstance(value, list):
-            if asset=='Data/WorldMap':
-                location=[str(key).casefold() for key in pointer]
-                if not (len(location)==2 and location[1]=='mapareas' or len(location)==4 and location[1]=='mapareas' and location[3]=='tooltips'):
-                    return
-                ids=[next((v for k,v in child.items() if k.casefold()=='id'),None) if isinstance(child,dict) else None for child in value]
-                if not all(isinstance(key,str) and re.fullmatch(r'[A-Za-z0-9_.-]+',key) for key in ids) or len(set(ids))!=len(ids):
-                    unknown.append('地图列表缺少唯一静态 Id，保留原文待游戏采集：'+asset+'/'+'/'.join(pointer))
-                    return
-                for key,child in zip(ids,value):walk_values(child,asset,pointer+[key],origin)
+            ids = list_ids(asset, pointer, value)
+            if ids is None:
+                if asset in ('Data/Minecarts','Data/WorldMap'):
+                    unknown.append('资源列表缺少唯一静态 Id 或路径不受支持，保留原文待游戏采集：'+asset)
+                if asset=='Data/Minecarts':
+                    for child in value:
+                        key=next((v for k,v in child.items() if k.casefold()=='id'),None) if isinstance(child,dict) else None
+                        if isinstance(key,str) and (ref:=name_reference(pointer+[key,'DisplayName'],None,origin)):
+                            bundle.minecart_names.append(ref)
                 return
-            for n, child in enumerate(value):
-                walk_values(child, asset, pointer + [str(n)], origin)
+            for key, child in zip(ids, value):
+                walk_values(child, asset, pointer + [key], origin)
         elif isinstance(value, str):
+            if asset=='Data/Minecarts':
+                from .minecarts import text_path, _LOCALIZED
+                normalized=text_path(pointer)
+                if normalized is None:
+                    if pointer and str(pointer[-1]).casefold() in ('displayname','buyticketmessage'):
+                        unknown.append('矿车显示路径无法静态确认，保留原文待游戏采集')
+                    return
+                pointer=normalized
+                # Built-in localizable references are interpreted by the game.
+                if _LOCALIZED.fullmatch(value):return
+                if '{{' in value and '{{i18n:' not in value:
+                    unknown.append('矿车动态显示文字需游戏解析后采集')
+                    return
+                if '[' in value:
+                    unknown.append('矿车本地化或动态表达式需游戏解析后确认')
+                    return
             if asset=='Data/WorldMap':
                 normalized=world_map_path(pointer)
                 if normalized is None:
@@ -309,10 +315,9 @@ def extract(item, bridge_captures=None):
                 if '{{' in value and '{{i18n:' not in value:
                     unknown.append('地图动态文本需游戏解析后采集：'+asset+'/'+'/'.join(pointer))
                     return
-            simple = asset.startswith(('Characters/Dialogue/', 'Strings/', 'Data/mail', 'Data/Events/', 'Data/Quests', 'Data/NPCGiftTastes', 'Data/EngagementDialogue', 'Data/ExtraDialogue', 'Data/SecretNotes'))
-            allowed = VISIBLE_FIELDS | ({'Name'} if asset in ('Data/SpecialOrders','Data/Buildings') else set())
-            if asset!='Data/WorldMap' and not simple and (not pointer or pointer[-1] not in allowed):
-                return
+            normalized=resource_text_path(asset,pointer)
+            if normalized is None:return
+            pointer=normalized
             if '{{i18n:' in value:
                 parts,_=spans(value,event_kind(value,asset))
                 if any(re.search('[A-Za-z]',TOKEN.sub('',part.text)) for part in parts):
@@ -322,7 +327,8 @@ def extract(item, bridge_captures=None):
                         'hint':'启用 Bridge，进入相关地图或界面使资源加载；退出游戏后重新扫描并翻译，其他条件版本仍待验收'})
                 return
             context = asset + '/' + '/'.join(pointer)
-            _add(bundle, Record(context, value, event_kind(value, asset), 'asset', origin, asset=asset, path=pointer))
+            _add(bundle, Record(context, value, event_kind(value, asset), 'asset', origin, asset=asset, path=pointer,
+                               target=value if asset=='Data/Minecarts' and re.search('[\u3400-\u9fff]',value) else ''))
     if is_cp and (folder / 'content.json').is_file():
         read_changes(folder / 'content.json')
         bundle.notes.extend(list(dict.fromkeys(unknown)))
@@ -347,6 +353,7 @@ def extract(item, bridge_captures=None):
     observed_paths=set()
     if bridge_captures:
         seen={(record.context,record.source,record.adapter) for record in bundle.records}
+        private_minecart_paths={tuple(r['path']) for r in bundle.minecart_names if r['kind']=='unresolved'}
         for capture in bridge_captures:
             if capture.get('mod_id') != item.mod_id or capture.get('mod_version') != item.version:
                 continue
@@ -354,6 +361,24 @@ def extract(item, bridge_captures=None):
             if not isinstance(source, str) or capture.get('source_hash') != source_hash(source):
                 continue
             asset,path=capture.get('asset'),capture.get('path')
+            if capture.get('adapter')=='asset':
+                normalized=resource_text_path(asset,path)
+                if normalized is None:continue
+                asset=canonical_asset(asset);path=normalized
+                capture=dict(capture,asset=asset,path=path,context=asset+'/'+ '/'.join(path))
+            if asset=='Data/Minecarts':
+                from .minecarts import text_path, display_path, name_reference, _LOCALIZED
+                normalized=text_path(path) if isinstance(path,list) else None
+                if normalized is None:continue
+                if tuple(normalized) in private_minecart_paths:continue
+                # Only observed, current literal definitions join text extraction.
+                # LocalizedText is resolved by the game, never sent as prose.
+                reference=name_reference(normalized,source,'bridge')
+                if reference and reference['kind']=='localized':
+                    bundle.minecart_name_observations.append(dict(capture,path=normalized))
+                    continue
+                if _LOCALIZED.fullmatch(source):continue
+                if '{{' in source or '[' in source:continue
             if capture.get('adapter')=='asset' and isinstance(asset,str) and isinstance(path,list) and all(isinstance(key,str) for key in path) and '{{i18n:' not in source:
                 observed_paths.add((asset.casefold(),tuple(path)))
             identity=(capture['context'],source,capture.get('adapter','draw'))

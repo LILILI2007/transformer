@@ -1,15 +1,13 @@
+param([string]$PythonPath)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot
-$buildPython = Join-Path $projectRoot '.venv-build\Scripts\python.exe'
-if (-not (Test-Path -LiteralPath $buildPython)) {
-    python -m venv .venv-build
-    if ($LASTEXITCODE -ne 0) { throw 'Cannot create the build environment.' }
-}
+. (Join-Path $PSScriptRoot 'project_environment.ps1')
+$buildPython = Use-ModLingoEnvironment -PythonPath $PythonPath
 & $buildPython -m pip install -r requirements-build.txt
 if ($LASTEXITCODE -ne 0) { throw 'Cannot install build dependencies.' }
 if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'bridge\package\ModLingo.Bridge.dll'))) { throw 'Build the companion with scripts/build_bridge.ps1 first.' }
-& $buildPython -m PyInstaller --noconfirm --clean --windowed --onedir --name ModLingo --add-data 'examples;examples' --add-data 'bridge/package;bridge/package' run_modlingo.py
+& $buildPython -m PyInstaller --noconfirm --clean --windowed --onedir --name ModLingo --add-data 'examples;examples' --add-data 'bridge/package;bridge/package' --add-data 'modlingo/resource_rules.json;modlingo' run_modlingo.py
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 $releaseRoot = Join-Path $projectRoot 'release'
 New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
@@ -23,7 +21,8 @@ New-Item -ItemType Directory -Path $previewRoot -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'artifacts\preview.png') -Destination $previewRoot -Force
 $reportRoot = Join-Path $projectRoot 'dist\ModLingo\reports'
 New-Item -ItemType Directory -Path $reportRoot -Force | Out-Null
-foreach ($name in @('game-probe-summary-0.6.13.json','performance-0.6.13.json','regression-0.6.13.json','coverage-0.6.13.json','coverage-0.6.13.csv')) {
+$packageVersion = & $buildPython -c 'from modlingo import __version__; print(__version__)'
+foreach ($name in @("game-probe-summary-$packageVersion.json","performance-$packageVersion.json","regression-$packageVersion.json","coverage-$packageVersion.json","coverage-$packageVersion.csv","minecart-adapter-$packageVersion.json","dependencies-$packageVersion.json")) {
     $sourceReport = Join-Path $projectRoot "artifacts\$name"
     if (Test-Path -LiteralPath $sourceReport) { Copy-Item -LiteralPath $sourceReport -Destination $reportRoot -Force }
 }

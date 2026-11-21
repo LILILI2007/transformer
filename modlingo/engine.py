@@ -44,7 +44,7 @@ class Engine:
         self.timings={'scan_prepare_seconds':0,'planning_seconds':0,'confirmation_wait_seconds':0,'network_seconds':0,'validation_seconds':0,'cache_write_seconds':0,'install_seconds':0}
         self.partial_report=None
         self.marker_cost=8 if config.provider=='deepseek' else 22
-        self.metrics.update({'memory_hits':0,'duplicate_fragments':0,'preserved_chinese':0,'source_records':0})
+        self.metrics.update({'waiting_dependencies':0,'dependency_hits':0,'memory_hits':0,'duplicate_fragments':0,'preserved_chinese':0,'source_records':0})
 
     def emit(self):
         elapsed=time.monotonic()-self.translation_started if self.translation_started is not None else 0
@@ -113,6 +113,9 @@ class Engine:
         self.runtime_hits={tuple(hit.get(key) for key in ('mod_id','mod_version','context','source_hash','target_hash'))
                            for hit in self.runtime.get('applied_unique',[]) or [] if isinstance(hit,dict)}
         report['runtime_evidence']={key:value for key,value in self.runtime.items() if key!='applied_unique'}
+        from .resource_rules import VERSION, HASH
+        report['extraction_rules']={'version':VERSION,'hash':HASH,
+            'bridge_matches':self.runtime.get('extraction_rules_hash')==HASH if self.runtime.get('extraction_rules_hash') else None}
         path=self.storage/'reports'/(self.run_id+'.json')
         acquired=str(self.mods)
         bundles=[]
@@ -144,6 +147,11 @@ class Engine:
         self.timings['scan_prepare_seconds']=time.monotonic()-self.started
         planning_started=time.monotonic()
         cache=Cache(self.storage)
+        from .dependencies import NameDependencies
+        dependencies=NameDependencies(bundles,cache,self.config,self.answers)
+        minecart_names=dependencies.names
+        report['minecart_name_resolution']={'resolved_destinations':len(minecart_names.names),
+            'unresolved_destinations':len(minecart_names.unresolved),'reasons':minecart_names.reasons}
         pending_by_mod=[]
         wire_groups={}
         wire_contexts={}
@@ -200,7 +208,7 @@ class Engine:
                     elif not record.parts and not record.notes:
                         record.target=record.source
                         existing.add(index)
-                display_labels,unresolved_labels=minecart_labels(bundle)
+                display_labels,unresolved_labels=minecart_labels(bundle,minecart_names)
                 bundle.display_label_reuse=[]
                 for index,(target,contexts) in display_labels.items():
                     record=bundle.records[index]
@@ -213,7 +221,7 @@ class Engine:
                     and (key:=memory_key(cache,self.config,bundle,bundle.records[index]))
                     and target_parts(bundle.records[index],bundle.records[index].target) is not None)
                 for index,record in enumerate(bundle.records):
-                    if index in existing:continue
+                    if index in existing or index in unresolved_labels:continue
                     key=memory_key(cache,self.config,bundle,record)
                     target=cache.memory_get(key) if key else None
                     if target and target_parts(record,target) is not None:
@@ -229,11 +237,16 @@ class Engine:
                     key=cache.key(self.config,unit.mod_id,unit.context,unit.source,glossary)
                     if key in self.bindings:
                         self.bindings[key].append((bundle,unit))
+                        if unit.record in unresolved_labels:self.metrics['waiting_dependencies']+=1
                         if key in self.answers:
                             self.metrics['completed']+=1
                             self.metrics['cache_hits']+=1
                         continue
                     self.bindings[key]=[(bundle,unit)]
+                    if unit.record in unresolved_labels:
+                        self.metrics['waiting_dependencies']+=1
+                        cache.mark(self.run_id,key,'waiting_dependency','等待目的地名称提供者；不翻译内部标识')
+                        continue
                     target=recovered_parts.get(unit.record,{}).get(unit.fragment)
                     if target is None:target=cache.get(key)
                     if target is None and (unit.record,unit.fragment) in previous_span_indices:
@@ -257,19 +270,18 @@ class Engine:
                         self.metrics['cache_hits']+=1
                     else:
                         diagnostic=cache.diagnostic(key)
-                        if unit.record in unresolved_labels:
-                            failure=Reason('矿车目的地标识缺少唯一可靠的显示名称；保留原值，等待名称映射，不自动请求翻译','alias_required')
-                            self.errors[key]=failure
-                            if not diagnostic or diagnostic['code']!='alias_required':
-                                cache.record_failure([key],failure,exhausted=True)
-                            self.metrics['failed']+=1
-                        elif diagnostic and diagnostic['exhausted'] and not self.retry_exhausted:
+                        if diagnostic and diagnostic['exhausted'] and not self.retry_exhausted:
                             self.errors[key]=Reason(diagnostic['reason'],diagnostic['code'])
                             self.metrics['failed']+=1
                         elif self.offline_only:
                             self.errors[key]=Reason('离线检查：缺少合格缓存译文，未发送请求','offline_missing')
                         else:
                             pending.append((key,unit.source))
+                for record_index in unresolved_labels:
+                    if record_index in existing:continue
+                    glossary=bundle.project.glossary if bundle.project else {}
+                    keys=[cache.key(self.config,u.mod_id,u.context,u.source,glossary) for u in record_units.get(record_index,[])]
+                    dependencies.defer(bundle,record_index,keys)
                 cache.mark_many(self.run_id,(key for key,source in pending),'queued')
                 max_chars=min(6000,max(256,self.config.max_output_tokens//2))
                 # Consolidate fragments from the same field with protected split
@@ -317,6 +329,7 @@ class Engine:
                   'duplicate_fragments':self.metrics['duplicate_fragments'],'preserved_chinese_fields':self.metrics['preserved_chinese'],
                   'unique_pending_fragments':sum(len(chunk) for chunk in wire_groups.values()),
                   'pending_fields':sum(len(items) for items in pending_by_mod),
+                  'dependency_waiting_fields':len(dependencies.waiting),
                   'estimated_initial_requests':jobs.estimated_requests(max_chars,self.config.max_output_tokens,self.marker_cost) if bundles else 0,
                   'note':'片段数不是 HTTP 请求数；初始请求估算不含拆分、重试及批次调整。'}
             report['plan']=plan
@@ -334,6 +347,41 @@ class Engine:
                         break
                     except queue.Empty:await asyncio.sleep(.1)
                 self.timings['confirmation_wait_seconds']=time.monotonic()-confirmation_started
+            units_for_bundle={id(b):{} for b in bundles}
+            for b in bundles:
+                for u in b.units:units_for_bundle[id(b)].setdefault(u.record,[]).append(u)
+            def backfill(changed=None):
+                nonlocal minecart_names
+                ready=dependencies.refresh(changed)
+                backfilled=False
+                while ready:
+                    backfilled=True
+                    rows=[]
+                    for _,bundle,index,keys in ready:
+                        record=bundle.records[index]
+                        parts=target_parts(record,record.target)
+                        if parts is None:continue
+                        glossary=bundle.project.glossary if bundle.project else {}
+                        for unit in units_for_bundle[id(bundle)].get(index,[]):
+                            key=cache.key(self.config,unit.mod_id,unit.context,unit.source,glossary)
+                            if key in self.answers:continue
+                            target=parts[unit.fragment]
+                            self.answers[key]=target
+                            count=len(self.bindings[key])
+                            self.metrics['completed']+=count
+                            self.metrics['dependency_hits']+=count
+                            self.metrics['waiting_dependencies']-=count
+                            rows.append((key,unit.source,target))
+                    cache.put_many(self.run_id,rows)
+                    # Derived names may themselves provide another name. Drain
+                    # the finite graph until no further dependency is satisfied.
+                    ready=dependencies.refresh([key for key,_,_ in rows])
+                minecart_names=dependencies.names
+                report['dependencies']=dependencies.summary()
+                report['minecart_name_resolution']={'resolved_destinations':len(minecart_names.names),
+                    'unresolved_destinations':len(minecart_names.unresolved),'reasons':minecart_names.reasons}
+                if backfilled:self.emit()
+            backfill()
             self.metrics['phase']='并发翻译'
             self.translation_started=time.monotonic()
             network_failures=0
@@ -387,6 +435,7 @@ class Engine:
                                 self.errors.pop(key,None)
                             self.answers[key]=target
                             self.metrics['completed']+=len(self.bindings[key])
+                    backfill([key for key,_,_ in expanded])
                     self.emit()
                     return repairs
                 def failed(items,error):
@@ -489,6 +538,17 @@ class Engine:
                         self.errors.setdefault(key,reason)
                     report['response_unknown_items']=sum(bool(attempts[key]) and key not in self.answers and not cache.diagnostic(key) for key in unresolved)
                     report['paused_reason']=reason
+            backfill()
+            dependencies.finish(self.errors,stopped=bool(paused or self.stop.is_set()))
+            for node,(bundle,index,keys) in dependencies.waiting.items():
+                failure=Reason(dependencies.graph.tasks[node].reason,'alias_required')
+                for key in keys:
+                    if key in self.answers:continue
+                    if key not in self.errors:self.metrics['failed']+=len(self.bindings[key])
+                    self.errors[key]=failure
+                    cache.record_failure([key],failure,exhausted=False)
+                    cache.mark(self.run_id,key,'waiting_dependency',str(failure))
+            report['dependencies']=dependencies.summary()
             self.timings['network_seconds']=time.monotonic()-self.translation_started
             memories=[]
             for identity,(bundle,index,units) in memory_records.items():
@@ -505,11 +565,30 @@ class Engine:
             self.emit()
             install_started=time.monotonic()
             conflicts=installation_conflicts(bundles)
+            # Verify external name providers before any of our own installs
+            # write their language files. Changed definitions cannot silently
+            # leak a stale display name into another pack's config labels.
+            invalid_names=set()
+            checked={}
+            for identifier,providers in dependencies.validation_providers().items():
+                for provider in providers:
+                    identity=str(provider.item.folder)
+                    if identity not in checked:
+                        try:
+                            validate_item(provider.item,self.mods)
+                            validate_sources(provider)
+                            checked[identity]=True
+                        except (ProjectError,OSError,ValueError):checked[identity]=False
+                    if not checked[identity]:invalid_names.add(identifier)
             for index,bundle in enumerate(bundles):
                 if self.test_budget and self.test_budget.remaining()<=0:self.stop.set()
                 if self.stop.is_set():
                     report['failure'].append(self.result(bundle.item,'已暂停','用户停止；已返回的结果保存在 SQLite，未安装此 mod'))
                     continue
+                reused_contexts={r['context'] for r in getattr(bundle,'display_label_reuse',[])}
+                reused={r.source for r in bundle.records if r.context in reused_contexts}
+                if reused & invalid_names:
+                    conflicts[index]='矿车显示名称来源在提取后发生变化；请重新扫描，未安装此模组译文'
                 result=self.result(bundle.item,'文件异常',conflicts[index]) if index in conflicts else self._install(bundle,index,cache)
                 report['success' if result['status']=='成功' else 'failure'].append(result)
                 atomic_write(path,json.dumps(report,ensure_ascii=False,indent=2).encode('utf-8'))

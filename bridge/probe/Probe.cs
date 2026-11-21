@@ -25,6 +25,7 @@ public sealed class Probe : Mod
     private bool ClosingResourcePassed,ClosingArgumentsPassed;
     private bool BubbleResourcePassed,BubbleCommandPassed;
     private bool LanguageScopePassed;
+    private bool MinecartPassed,MinecartPrivatePassed,MinecartLocalizedPassed;
     private string? BubbleError;
     private bool DrawRan;
     private string? Error;
@@ -112,6 +113,18 @@ public sealed class Probe : Mod
                     bridge.GetMethod("WalkAsset",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(instance,new object?[]{duplicate,"Data/WorldMap",new List<string>(),null,translations["Data/WorldMap"],0});
                     WorldMapDuplicateGuardPassed=duplicate["ModLingoProbeRegion"].MapAreas.All(a=>a.ScrollText=="Probe map scroll");
                     TargetFieldPassed=objects.TryGetValue("ModLingoProbeObject",out var obj)&&obj.DisplayName=="嵌套路径花朵"&&obj.Description=="嵌套路径说明"&&obj.Name=="probe_internal_id"&&obj.Price==123;
+                    var carts=Helper.GameContent.Load<Dictionary<string,StardewValley.GameData.Minecarts.MinecartNetworkData>>("Data/Minecarts");
+                    var network=carts["ModLingoProbeNetwork"];
+                    var dock=network.Destinations.Single(d=>d.Id=="ModLingoProbe.Dock");
+                    MinecartPassed=network.LockedMessage=="矿车尚未开放"&&dock.DisplayName=="测试码头"&&dock.Id=="ModLingoProbe.Dock"
+                        &&dock.TargetLocation=="Town"&&dock.Price==123&&dock.CustomFields?.GetValueOrDefault("DisplayName")=="Internal display sentinel";
+                    MinecartPrivatePassed=network.Destinations.Single(d=>d.Id=="ModLingoProbe.Custom").DisplayName=="Private minecart sentinel";
+                    var captureStore=bridge.GetField("Captures",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(instance)!;
+                    var nameCaptures=(IEnumerable)captureStore.GetType().GetProperty("Values")!.GetValue(captureStore)!;
+                    MinecartPrivatePassed&=!nameCaptures.Cast<object>().Any(v=>(string?)v.GetType().GetProperty("source")!.GetValue(v)=="Private minecart sentinel");
+                    string nativeBus=Game1.content.LoadString("Strings\\Locations:MineCart_Destination_BusStop");
+                    MinecartLocalizedPassed=nativeBus.Any(c=>c is >= '\u3400' and <= '\u9fff')&&nameCaptures.Cast<object>().Any(v=>(string?)v.GetType().GetProperty("resolved_name")!.GetValue(v)==nativeBus
+                        &&(string?)v.GetType().GetProperty("locale")!.GetValue(v)=="zh");
                     var gmcm=AppDomain.CurrentDomain.GetAssemblies().First(a=>a.GetType("GenericModConfigMenu.Mod") is not null);
                     var type=gmcm.GetType("GenericModConfigMenu.Mod")!;
                     const BindingFlags flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.Static;
@@ -170,6 +183,8 @@ public sealed class Probe : Mod
             if(Seconds>=15)
             {
                 File.WriteAllText(Path.Combine(Helper.DirectoryPath,"probe-result.json"),JsonSerializer.Serialize(new {startup_capture_checked=StartupCapturePassed,startup_no_calls_checked=StartupNoCallsPassed,gmcm_runtime_text_checked=RuntimeTextPassed,gmcm_runtime_deferred_checked=RuntimeDeferredPassed,gmcm_runtime_null_checked=RuntimeNullPassed,gmcm_runtime_page_checked=RuntimePagePassed,gmcm_runtime_raw_checked=RuntimeRawPassed,gmcm_runtime_cache_checked=RuntimeCachePassed,world_map_checked=WorldMapPassed,world_map_duplicate_guard_checked=WorldMapDuplicateGuardPassed,closing_resource_checked=ClosingResourcePassed,closing_arguments_checked=ClosingArgumentsPassed,header_resource_checked=HeaderResourcePassed,asset_checked=AssetPassed,language_scope_checked=LanguageScopePassed,target_field_checked=TargetFieldPassed,event_resource_checked=EventResourcePassed,bubble_resource_checked=BubbleResourcePassed,bubble_command_checked=BubbleCommandPassed,bubble_error=BubbleError,draw_ran=DrawRan,gmcm_registered=Menu is not null,gmcm_name_checked=NamePassed,gmcm_builtin_name_checked=BuiltinNamePassed,gmcm_numeric_checked=NumericPassed,numeric_first=NumericFirst,numeric_second=NumericSecond,gmcm_choice_checked=ChoicePassed,gmcm_anonymous_choice_checked=AnonymousChoicePassed,raw_choice_unchanged=RawPassed,menu_type=MenuType,error=Error}));
+                File.WriteAllText(Path.Combine(Helper.DirectoryPath,"minecart-probe-result.json"),JsonSerializer.Serialize(new {
+                    minecart_resource_checked=MinecartPassed,minecart_private_name_ignored=MinecartPrivatePassed,minecart_localized_name_checked=MinecartLocalizedPassed}));
                 Game1.game1.Exit();
             }
         };

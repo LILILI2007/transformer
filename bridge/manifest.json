@@ -1,7 +1,7 @@
 {
   "Name": "ModLingo Bridge",
   "Author": "ModLingo contributors",
-  "Version": "0.5.7",
+  "Version": "0.5.9",
   "Description": "Offline text capture and checked Chinese replacements; no API keys or network calls.",
   "UniqueID": "ModLingo.Bridge",
   "EntryDll": "ModLingo.Bridge.dll",

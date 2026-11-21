@@ -77,6 +77,15 @@ def main():
         {'Action':'EditData','Target':'Characters/Dialogue/Abigail','When':{'Language':'en'},'Entries':{'ModLingoProbeRetainEn':'English fallback remains extractable'}},
         {'Action':'EditData','Target':'Data/Objects','Entries':{'ModLingoProbeObject':{'Name':'probe_internal_id','DisplayName':'Original object name','Description':'Original object description','Type':'Basic','Category':-999,'Price':123}}},
         {'Action':'EditData','Target':'Data/Objects','TargetField':['ModLingoProbeObject'],'Entries':{'DisplayName':'Nested flower name','Description':'Nested flower description'}}])
+    cp_data['ConfigSchema']={'CustomCart.Name':{'Default':'Private minecart sentinel'}}
+    cp_data['Changes'].append({'Action':'EditData','Target':'Data/Minecarts','Entries':{
+        'ModLingoProbeNetwork':{'LockedMessage':'Probe minecart locked','Destinations':[
+            {'Id':'ModLingoProbe.Dock','DisplayName':'Probe dock name','TargetLocation':'Town',
+                'TargetTile':{'X':12,'Y':14},'Price':123,'CustomFields':{'DisplayName':'Internal display sentinel'}},
+            {'Id':'ModLingoProbe.Localized','DisplayName':'[LocalizedText Strings\\Locations:MineCart_Destination_BusStop]',
+                'TargetLocation':'BusStop','TargetTile':{'X':12,'Y':14}},
+            {'Id':'ModLingoProbe.Custom','DisplayName':'{{CustomCart.Name}}','TargetLocation':'Town','TargetTile':{'X':12,'Y':14}}
+        ]}}})
     (cp/'content.json').write_text(json.dumps(cp_data),encoding='utf-8')
     cp_item=next(item for item in scan_mods(mods) if item.mod_id=='ModLingo.ProbeCP')
     cp_bundle=extract(cp_item)
@@ -98,6 +107,14 @@ def main():
         pack['records'].append({'adapter':'asset','context':'Data/WorldMap/'+'/'.join(path),'asset':'Data/WorldMap','path':path,'source':source,'source_hash':source_hash(source),'target':target})
     for field,source,target in [('DisplayName','Nested flower name','嵌套路径花朵'),('Description','Nested flower description','嵌套路径说明')]:
         pack['records'].append({'adapter':'asset','context':'Data/Objects/ModLingoProbeObject/'+field,'asset':'Data/Objects','path':['ModLingoProbeObject',field],'source':source,'source_hash':source_hash(source),'target':target})
+    (translations/(digest('ModLingo.ProbeCP')[:32]+'.json')).write_text(json.dumps(pack,ensure_ascii=False),encoding='utf-8')
+    for pointer,source,target in [
+        (['ModLingoProbeNetwork','LockedMessage'],'Probe minecart locked','矿车尚未开放'),
+        (['ModLingoProbeNetwork','Destinations','ModLingoProbe.Dock','DisplayName'],'Probe dock name','测试码头'),
+        (['ModLingoProbeNetwork','Destinations','ModLingoProbe.Dock','CustomFields','DisplayName'],'Internal display sentinel','不应替换'),
+        (['ModLingoProbeNetwork','Destinations','ModLingoProbe.Custom','DisplayName'],'Private minecart sentinel','不应替换玩家名称')]:
+        pack['records'].append({'adapter':'asset','context':'Data/Minecarts/'+'/'.join(pointer),'asset':'Data/Minecarts',
+            'path':pointer,'source':source,'source_hash':source_hash(source),'target':target})
     (translations/(digest('ModLingo.ProbeCP')[:32]+'.json')).write_text(json.dumps(pack,ensure_ascii=False),encoding='utf-8')
     fixture_records=[{'adapter':'gmcm','context':'gmcm/AddParagraph/text','asset':'','path':[],'source':'Hello GMCM fixture','source_hash':source_hash('Hello GMCM fixture'),'target':'你好设置菜单测试'}]
     for context,source,target in [
@@ -150,9 +167,13 @@ def main():
             except ValueError:
                 pass
     result=json.loads((fixture/'probe-result.json').read_text(encoding='utf-8')) if (fixture/'probe-result.json').exists() else {'error':'probe did not complete'}
+    if (fixture/'minecart-probe-result.json').exists():
+        result.update(json.loads((fixture/'minecart-probe-result.json').read_text(encoding='utf-8')))
     data=json.loads((bridge/'captures.json').read_text(encoding='utf-8-sig')) if (bridge/'captures.json').exists() else {'captures':[]}
     result.update({'capture_adapters':sorted(set(x['adapter'] for x in data['captures'])),'applied':data.get('applied',{}),'captures':len(data['captures']),'exit_code':process.returncode,'profile':str(profile),'paid_api_calls':0,'save_loaded':False})
     result['private_input_ignored']=not any(x.get('source')=='private input sentinel' for x in data['captures'])
+    from modlingo.resource_rules import VERSION, HASH
+    result['shared_extraction_rules_checked']=(data.get('extraction_rules_version')==VERSION and data.get('extraction_rules_hash')==HASH)
     result['gmcm_capabilities']=data.get('gmcm_capabilities',{})
     result['unique_hits_checked']=len(data.get('applied_unique',[]))==sum(data.get('applied',{}).values()) and bool(data.get('applied_unique'))
     real_result=fixture/'real-menu-results.json'
@@ -169,7 +190,7 @@ def main():
     result['early_literal_captured']=any(x.get('context')=='gmcm/deferred-literal' and x.get('source')=='Early registered literal' for x in data['captures'])
     result['gmcm_existing_context_preserved']=sum(x.get('source')=='Hello GMCM fixture' for x in data['captures'])==1 and any(x.get('source')=='Hello GMCM fixture' and x.get('context')=='gmcm/AddParagraph/text' for x in data['captures'])
     result['gmcm_existing_context_preserved'] &= sum(x.get('source')=='Untranslated paragraph fixture' for x in data['captures'])==1 and any(x.get('source')=='Untranslated paragraph fixture' and x.get('context')=='gmcm/AddParagraph/text' for x in data['captures'])
-    runtime_keys=('startup_capture_checked','startup_no_calls_checked','unique_hits_checked','gmcm_runtime_text_checked','gmcm_runtime_deferred_checked','gmcm_runtime_null_checked','gmcm_runtime_page_checked','gmcm_runtime_raw_checked','gmcm_runtime_cache_checked','gmcm_existing_context_preserved')
+    runtime_keys=('shared_extraction_rules_checked','minecart_resource_checked','minecart_private_name_ignored','minecart_localized_name_checked','startup_capture_checked','startup_no_calls_checked','unique_hits_checked','gmcm_runtime_text_checked','gmcm_runtime_deferred_checked','gmcm_runtime_null_checked','gmcm_runtime_page_checked','gmcm_runtime_raw_checked','gmcm_runtime_cache_checked','gmcm_existing_context_preserved')
     (root/('artifacts/game-probe-'+__version__+'.json')).write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({key:value for key,value in result.items() if key!='real_menu_results'},ensure_ascii=True))
     if result.get('error') or not all(result.get(key) for key in (*runtime_keys,'world_map_checked','world_map_duplicate_guard_checked','world_map_capture_checked','mixed_capture_status_checked','closing_resolved_capture_checked','closing_resolved_extraction_checked','closing_resource_checked','closing_arguments_checked','header_resource_checked','asset_checked','language_scope_checked','language_scope_extraction_checked','bubble_resource_checked','bubble_command_checked','event_resource_checked','target_field_checked','target_field_capture_checked','gmcm_name_checked','gmcm_builtin_name_checked','gmcm_choice_checked','gmcm_anonymous_choice_checked','gmcm_numeric_checked','numeric_capture_deduplicated','early_literal_captured','raw_choice_unchanged','private_input_ignored')) or not {'gmcm','draw','asset'}.issubset(result['capture_adapters']):

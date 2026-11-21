@@ -1,0 +1,2 @@
+# Keep the prebuilt Bridge resource fingerprint stable across checkouts.
+modlingo/resource_rules.json text eol=lf

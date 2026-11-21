@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../ResourceRules.cs" Link="ResourceRules.cs" />
+    <EmbeddedResource Include="../../modlingo/resource_rules.json" LogicalName="ModLingo.ResourceRules.json" />
+  </ItemGroup>
+</Project>

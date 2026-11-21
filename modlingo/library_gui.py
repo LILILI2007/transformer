@@ -468,6 +468,8 @@ class LibraryApp(APIVerification):
                     self.status.set('已处理 %d 个：%s · %s' % (len(self.results), data['name'], data['status']))
                 elif kind == 'translation_plan':
                     self.summary.set('去重后待译 %d 个字段 / %d 个片段；已可用 %d 个片段，合并重复 %d 个片段。' % (data['pending_fields'],data['unique_pending_fragments'],data['already_available_fragments'],data['duplicate_fragments']))
+                    if data.get('dependency_waiting_fields'):
+                        self.summary.set(self.summary.get()+'另有 %d 个显示字段等待名称译文，将在本轮自动回填。' % data['dependency_waiting_fields'])
                     if data['pending_fields']:
                         bridge=data.get('bridge',{})
                         bridge_note='\n伴随插件缺失：存在插件译文时会补齐程序。' if not bridge.get('ready',True) else ''
@@ -478,6 +480,8 @@ class LibraryApp(APIVerification):
                     eta='估算中' if data['eta_seconds'] is None else '%d 分 %d 秒' % divmod(data['eta_seconds'],60)
                     age='尚无响应' if data['last_response'] is None else '%d 秒前' % max(0,int(time.time()-data['last_response']))
                     self.status.set('%s · 片段完成 %d/%d · 失败 %d · 缓存 %d · HTTP 已发 %d / 处理中 %d · 重试等待 %d · 最近响应 %s · 本轮剩余 %s' % (data['phase'],data['completed'],data['total'],data.get('failed',0),data['cache_hits'],data['requests'],data['in_flight'],data['waiting_retry'],age,eta))
+                    if data.get('waiting_dependencies') or data.get('dependency_hits'):
+                        self.status.set(self.status.get()+' · 等待名称 %d / 已回填 %d 片段' % (data.get('waiting_dependencies',0),data.get('dependency_hits',0)))
                 elif kind == 'report':
                     self.report_path, report = data
                     partial = sum(r['status'] == '部分完成' for r in report['failure'])
@@ -486,6 +490,9 @@ class LibraryApp(APIVerification):
                         from collections import Counter
                         counts=Counter(r['status'] for r in report['success']+report['failure'])
                         self.summary.set('；'.join('%s %d 个' % (name,counts[name]) for name in ('成功','部分完成','失败','文件异常','需进游戏采集','无需翻译','仅其他语言','待确认','已暂停'))+'。可采集不代表已汉化，详情见记录。')
+                        if report.get('dependencies'):
+                            dependencies=report['dependencies']
+                            self.summary.set(self.summary.get()+'本轮自动回填 %d 个显示字段，%d 个仍等待可靠名称。' % (dependencies['same_run_backfilled_fields'],dependencies['pending_fields']))
                     else:
                         failed = len(report['failure']) - partial - unsupported
                         self.summary.set('成功 %d 个；部分完成 %d 个；失败 %d 个；不支持 %d 个（失败或部分完成等共 %d 个需关注）。详情见记录。' % (len(report['success']), partial, failed, unsupported, len(report['failure'])))

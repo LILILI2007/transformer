@@ -58,7 +58,8 @@ def prepare_spool(item, storage, spool, captures):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('w', encoding='utf-8') as out:
         meta = {'category': bundle.category, 'notes': bundle.notes, 'project': None,'bridge_snapshot':snapshot,'excluded_patches':bundle.excluded_patches,'pending_captures':bundle.pending_captures,
-                'source_snapshots':bundle.source_snapshots}
+                'source_snapshots':bundle.source_snapshots,'minecart_names':bundle.minecart_names,
+                'minecart_name_observations':bundle.minecart_name_observations}
         if bundle.project:
             project = bundle.project
             meta['project'] = {'mod_id': project.mod_id, 'name': project.name, 'folder': project.folder, 'version':project.version,
@@ -78,6 +79,8 @@ def read_spool(item, path):
         bundle.pending_captures=meta.get('pending_captures',[])
         bundle.bridge_snapshot=meta.get('bridge_snapshot')
         bundle.source_snapshots=meta.get('source_snapshots',{})
+        bundle.minecart_names=meta.get('minecart_names',[])
+        bundle.minecart_name_observations=meta.get('minecart_name_observations',[])
         if meta['project']:
             bundle.project = Project(**meta['project'])
         for line in stream:

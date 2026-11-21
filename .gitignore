@@ -23,3 +23,4 @@ artifacts/*reference.txt
 bridge/**/bin/
 bridge/**/obj/
 *.egg-info/
+.vscode/

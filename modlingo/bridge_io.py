@@ -56,7 +56,7 @@ def runtime_evidence(mods):
         if not path.is_file() or linked(path):return {}
         data=read_jsonc(path)
         if data.get('bridge_version')!=plugin_status(mods).get('version'):return {}
-        return {key:data.get(key) for key in ('session_id','bridge_version','gmcm_version','gmcm_capabilities','applied_unique')}
+        return {key:data.get(key) for key in ('session_id','bridge_version','extraction_rules_version','extraction_rules_hash','gmcm_version','gmcm_capabilities','applied_unique')}
     except (ProjectError,OSError,ValueError):return {}
 
 def install_plugin(mods, source=None):

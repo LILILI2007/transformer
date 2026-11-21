@@ -1,0 +1,17 @@
+# Windows Python 3.9 runtime/build dependencies migrated from the working build.
+altgraph==0.17.5
+anyio==4.12.1
+certifi==2026.7.22
+exceptiongroup==1.3.1
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+importlib_metadata==8.7.1
+packaging==26.3
+pefile==2023.2.7
+pyinstaller==6.16.0
+pyinstaller-hooks-contrib==2026.8
+pywin32-ctypes==0.2.3
+typing_extensions==4.16.0
+zipp==3.23.1

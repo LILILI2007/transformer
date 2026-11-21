@@ -50,10 +50,9 @@ public sealed class ModEntry : Mod
     private readonly Dictionary<string, HashSet<string>> Literals = new();
     private readonly Dictionary<string, HashSet<string>> AssetOwners = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Dictionary<string, HashSet<string>>> AssetPaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> DynamicMinecartNames = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<Translation>> AssetTranslations = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Dictionary<string, List<Translation>>> AssetTranslationPaths = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> Fields = new() { "DisplayName", "Description", "Text", "Title", "Dialogue", "Question", "Objective", "CompletionMessage", "DisplayDescription", "DisplayTitle" };
-    private readonly string[] AssetPrefixes = { "Characters/Dialogue/", "Strings/", "Data/mail", "Data/Events/", "Data/Quests", "Data/Objects", "Data/BigCraftables", "Data/Weapons", "Data/Furniture", "Data/Buildings", "Data/Characters", "Data/SpecialOrders", "Data/Movies", "Data/Festivals", "Data/NPCGiftTastes", "Data/EngagementDialogue", "Data/ExtraDialogue", "Data/SecretNotes", "Data/WorldMap" };
     private readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = false, WriteIndented = true };
     [ThreadStatic] private static string? Owner;
     [ThreadStatic] private static string? Callsite;
@@ -150,33 +149,40 @@ public sealed class ModEntry : Mod
                 {
                     if (node.ValueKind == JsonValueKind.Object)
                     {
-                        if (node.TryGetProperty("Target", out var target) && target.ValueKind == JsonValueKind.String)
+                        if (ResourceRules.UnrelatedLanguage(node).Length>0) return;
+                        if (node.TryGetProperty("Action",out var patchAction) && patchAction.ValueKind==JsonValueKind.String
+                            && patchAction.GetString() is "EditData" or "Load"
+                            && node.TryGetProperty("Target", out var target) && target.ValueKind == JsonValueKind.String)
                             foreach (string asset in target.GetString()!.Split(','))
                             {
-                                string name = asset.Trim().Replace('\\', '/');
+                                string? canonical = ResourceRules.CanonicalAsset(asset.Trim());
+                                if(canonical is null) continue;
+                                string name=canonical;
                                 if (!AssetOwners.TryGetValue(name, out var owners)) AssetOwners[name] = owners = new();
                                 owners.Add(id);
                                 if (!AssetPaths.TryGetValue(name,out var byMod)) AssetPaths[name]=byMod=new();
                                 if (!byMod.TryGetValue(id,out var paths)) byMod[id]=paths=new();
                                 void Leaves(JsonElement element,List<string> pointer)
                                 {
+                                    if(pointer.Count>ResourceRules.MaxDepth) return;
                                     if(element.ValueKind==JsonValueKind.Object)
                                         foreach(var property in element.EnumerateObject()) {pointer.Add(property.Name);Leaves(property.Value,pointer);pointer.RemoveAt(pointer.Count-1);}
                                     else if(element.ValueKind==JsonValueKind.Array)
                                     {
-                                        int index=0;
-                                        if(name.Equals("Data/WorldMap",StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            var children=element.EnumerateArray().ToArray();
-                                            var ids=children.Select(child=>child.ValueKind==JsonValueKind.Object?child.EnumerateObject().FirstOrDefault(p=>p.Name.Equals("Id",StringComparison.OrdinalIgnoreCase)).Value:default).Select(key=>key.ValueKind==JsonValueKind.String?key.GetString():null).ToArray();
-                                            if(ids.Any(key=>!ValidWorldMapId(key))||ids.Distinct(StringComparer.Ordinal).Count()!=ids.Length) return;
-                                            for(int i=0;i<children.Length;i++) {pointer.Add(ids[i]!);Leaves(children[i],pointer);pointer.RemoveAt(pointer.Count-1);}
-                                        }
-                                        else foreach(var child in element.EnumerateArray()) {pointer.Add((index++).ToString());Leaves(child,pointer);pointer.RemoveAt(pointer.Count-1);}
+                                        var children=element.EnumerateArray().ToArray();
+                                        var ids=ResourceRules.ListIds(name,pointer,children);
+                                        if(ids is null)return;
+                                        for(int i=0;i<children.Length;i++) {pointer.Add(ids[i]);Leaves(children[i],pointer);pointer.RemoveAt(pointer.Count-1);}
                                     }
                                     else if(element.ValueKind==JsonValueKind.String)
                                     {
-                                        var normalized=name.Equals("Data/WorldMap",StringComparison.OrdinalIgnoreCase)?WorldMapPath(pointer):pointer.ToArray();
+                                        var normalized=ResourceRules.TextPath(name,pointer);
+                                        if(name.Equals("Data/Minecarts",StringComparison.OrdinalIgnoreCase)&&normalized?.Last()=="DisplayName")
+                                        {
+                                            string source=element.GetString()??"";
+                                            if(ResourceRules.ReferenceKind(source)=="unresolved")
+                                                DynamicMinecartNames.Add(string.Join("\u001f",normalized));
+                                        }
                                         if(normalized is not null) paths.Add(string.Join("\u001f",normalized));
                                     }
                                 }
@@ -283,11 +289,8 @@ public sealed class ModEntry : Mod
 
     private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
     {
-        string name = e.NameWithoutLocale.Name.Replace('\\', '/');
-        if(name.StartsWith("Data/WorldMap",StringComparison.OrdinalIgnoreCase)&&!name.Equals("Data/WorldMap",StringComparison.OrdinalIgnoreCase)) return;
-        string? prefix = AssetPrefixes.FirstOrDefault(p=>name.StartsWith(p,StringComparison.OrdinalIgnoreCase));
-        if(prefix is not null) name=prefix+name.Substring(prefix.Length);
-        if (!AssetPrefixes.Any(p => name.StartsWith(p, StringComparison.OrdinalIgnoreCase))) return;
+        string? name = ResourceRules.CanonicalAsset(e.NameWithoutLocale.Name);
+        if(name is null) return;
         AssetOwners.TryGetValue(name, out var owners);
         AssetTranslations.TryGetValue(name, out var records);
         if (owners is null && records is null) return;
@@ -298,61 +301,70 @@ public sealed class ModEntry : Mod
         }, AssetEditPriority.Late);
     }
 
-    private static bool ValidWorldMapId(string? value) => value is not null && Regex.IsMatch(value,@"\A[A-Za-z0-9_.-]+\z");
-    private static string[]? WorldMapPath(List<string> path)
+    private static string? LocalizedMinecartName(string source)
     {
-        if(path.Count==4&&path[1].Equals("MapAreas",StringComparison.OrdinalIgnoreCase)&&path[3].Equals("ScrollText",StringComparison.OrdinalIgnoreCase)&&new[]{path[0],path[2]}.All(ValidWorldMapId))
-            return new[]{path[0],"MapAreas",path[2],"ScrollText"};
-        if(path.Count==6&&path[1].Equals("MapAreas",StringComparison.OrdinalIgnoreCase)&&path[3].Equals("Tooltips",StringComparison.OrdinalIgnoreCase)&&path[5].Equals("Text",StringComparison.OrdinalIgnoreCase)&&new[]{path[0],path[2],path[4]}.All(ValidWorldMapId))
-            return new[]{path[0],"MapAreas",path[2],"Tooltips",path[4],"Text"};
-        return null;
+        if(LocalizedContentManager.CurrentLanguageCode!=LocalizedContentManager.LanguageCode.zh)return null;
+        // Only the documented built-in string reference. No arbitrary token
+        // evaluation, config getters, custom names, or global language switch.
+        var match=Regex.Match(source,@"\A(?:"+ResourceRules.LocalizedPattern+@")\z",RegexOptions.CultureInvariant);
+        if(!match.Success)return null;
+        try
+        {
+            string value=Game1.content.LoadString(match.Groups[1].Value);
+            return Regex.IsMatch(value,@"[\u3400-\u9fff]")&&!value.Contains("[LocalizedText")&&!value.Contains("{{")?value:null;
+        }
+        catch(Exception) {return null;}
     }
-
     private void WalkAsset(object? value, string asset, List<string> path, HashSet<string>? owners, List<Translation>? translations, int depth)
     {
-        if (value is null || depth > 12) return;
+        if (value is null || depth > ResourceRules.MaxDepth) return;
         string Change(string source)
         {
-            string context = asset + "/" + string.Join("/", path);
+            string[]? capturePath=ResourceRules.TextPath(asset,path);
+            if(capturePath is null)return source;
+            if(asset=="Data/Minecarts"&&DynamicMinecartNames.Contains(string.Join("\u001f",capturePath)))return source;
+            string context = asset + "/" + string.Join("/", capturePath);
             if(AssetPaths.TryGetValue(asset,out var owned))
             {
-                string pointer=string.Join("\u001f",path);
+                string pointer=string.Join("\u001f",capturePath);
                 string[] ownedMatches=owned.Where(p=>p.Value.Contains(pointer)).Select(p=>p.Key).ToArray();
-                if(ownedMatches.Length==1) CaptureText(ownedMatches[0],context,source,"asset",asset,path.ToArray());
+                if(ownedMatches.Length==1) CaptureText(ownedMatches[0],context,source,"asset",asset,capturePath,
+                    asset=="Data/Minecarts"&&capturePath.Last()=="DisplayName"?LocalizedMinecartName(source):null);
             }
             if (LocalizedContentManager.CurrentLanguageCode != LocalizedContentManager.LanguageCode.zh || translations is null) return source;
-            if(!AssetTranslationPaths.TryGetValue(asset,out var indexed)||!indexed.TryGetValue(string.Join("\u001f",path),out var candidates)) return source;
+            if(!AssetTranslationPaths.TryGetValue(asset,out var indexed)||!indexed.TryGetValue(string.Join("\u001f",capturePath),out var candidates)) return source;
             string hash=Hash(source);
             var matches = candidates.Where(t => t.source_hash == hash && t.source == source).Select(t => t.target).Distinct().ToArray();
             if(matches.Length==1&&matches[0]!=source)
                 foreach(var match in candidates.Where(t=>t.source_hash==hash&&t.source==source))TrackApplied("asset",match.mod_id,match.context,source,matches[0]);
             return matches.Length == 1 ? matches[0] : source;
         }
-        bool AllStrings() => asset.StartsWith("Characters/Dialogue/") || asset.StartsWith("Strings/") || asset == "Data/mail" || asset.StartsWith("Data/Events/") || asset == "Data/Quests" || asset == "Data/NPCGiftTastes" || asset == "Data/EngagementDialogue" || asset == "Data/ExtraDialogue" || asset == "Data/SecretNotes";
-        bool Visible(string key) => asset=="Data/WorldMap" ? WorldMapPath(path) is not null : Fields.Contains(key) || (key == "Name" && asset is "Data/SpecialOrders" or "Data/Buildings");
+        bool Visible() => ResourceRules.TextPath(asset,path) is not null;
         if (value is IDictionary dictionary)
         {
             foreach (object key in dictionary.Keys.Cast<object>().ToArray())
             {
                 path.Add(key.ToString()!);
                 object? child = dictionary[key];
-                if (child is string source && (AllStrings() || Visible(path.Last()))) dictionary[key] = Change(source);
+                if (child is string source && Visible()) dictionary[key] = Change(source);
                 else WalkAsset(child, asset, path, owners, translations, depth + 1);
                 path.RemoveAt(path.Count - 1);
             }
         }
         else if (value is IList list)
         {
+            string mode=ResourceRules.ListMode(asset,path);
+            if(mode=="skip")return;
             string?[]? ids=null;
-            if(asset=="Data/WorldMap")
+            if(mode=="id")
             {
                 ids=list.Cast<object?>().Select(value=>value?.GetType().GetField("Id",BindingFlags.Public|BindingFlags.Instance|BindingFlags.IgnoreCase)?.GetValue(value) as string).ToArray();
-                if(ids.Any(key=>!ValidWorldMapId(key))||ids.Distinct(StringComparer.Ordinal).Count()!=ids.Length) return;
+                if(ids.Any(key=>!ResourceRules.ValidId(key))||ids.Distinct(StringComparer.Ordinal).Count()!=ids.Length)return;
             }
             for (int i = 0; i < list.Count; i++)
             {
                 path.Add(ids is null?i.ToString():ids[i]!);
-                if (list[i] is string source && AllStrings()) list[i] = Change(source);
+                if (list[i] is string source && Visible()) list[i] = Change(source);
                 else WalkAsset(list[i], asset, path, owners, translations, depth + 1);
                 path.RemoveAt(path.Count - 1);
             }
@@ -362,14 +374,14 @@ public sealed class ModEntry : Mod
             foreach (var property in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.CanRead && p.GetIndexParameters().Length == 0))
             {
                 path.Add(property.Name);
-                if (property.PropertyType == typeof(string) && property.CanWrite && Visible(property.Name)) property.SetValue(value, Change((string?)property.GetValue(value) ?? ""));
+                if (property.PropertyType == typeof(string) && property.CanWrite && Visible()) property.SetValue(value, Change((string?)property.GetValue(value) ?? ""));
                 else if (property.PropertyType != typeof(string)) WalkAsset(property.GetValue(value), asset, path, owners, translations, depth + 1);
                 path.RemoveAt(path.Count - 1);
             }
             foreach (var field in value.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
                 path.Add(field.Name);
-                if (field.FieldType == typeof(string) && Visible(field.Name)) field.SetValue(value, Change((string?)field.GetValue(value) ?? ""));
+                if (field.FieldType == typeof(string) && Visible()) field.SetValue(value, Change((string?)field.GetValue(value) ?? ""));
                 else if (field.FieldType != typeof(string)) WalkAsset(field.GetValue(value), asset, path, owners, translations, depth + 1);
                 path.RemoveAt(path.Count - 1);
             }
@@ -746,11 +758,16 @@ public sealed class ModEntry : Mod
         }
         return Alias(mod,context,source);
     }
-    private void CaptureText(string mod, string context, string source, string adapter, string asset, string[] path)
+    private void CaptureText(string mod, string context, string source, string adapter, string asset, string[] path, string? resolvedName=null)
     {
         if (source.Length is < 2 or > 200000 || !source.Any(c => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z') || !Mods.TryGetValue(mod, out var info) || Captures.Count >= 20000) return;
         string hash = Hash(source);
-        if (Captures.TryAdd(mod + "\0" + context + "\0" + hash, new Capture { mod_id=mod, mod_version=info.Version, context=context, source=source, source_hash=hash, adapter=adapter, asset=asset, path=path })) Interlocked.Exchange(ref Changed, 1);
+        string key=mod+"\0"+context+"\0"+hash;
+        var capture=new Capture { mod_id=mod, mod_version=info.Version, context=context, source=source, source_hash=hash, adapter=adapter, asset=asset, path=path,
+            resolved_name=resolvedName,resolved_hash=resolvedName is null?null:Hash(resolvedName),locale=resolvedName is null?null:"zh" };
+        if(Captures.TryAdd(key,capture))Interlocked.Exchange(ref Changed,1);
+        else if(resolvedName is not null&&Captures.TryGetValue(key,out var previous)&&previous.resolved_name!=resolvedName)
+        {Captures[key]=capture;Interlocked.Exchange(ref Changed,1);}
     }
     private void Flush()
     {
@@ -765,7 +782,7 @@ public sealed class ModEntry : Mod
             {
                 string path = Path.Combine(Helper.DirectoryPath, "captures.json");
                 string temporary = path + ".tmp";
-                File.WriteAllText(temporary, JsonSerializer.Serialize(new { schema_version=1, captures=snapshot, applied=Applied.ToDictionary(p=>p.Key,p=>p.Value), applied_unique=unique, session_id=SessionId, bridge_version=ModManifest.Version.ToString(), gmcm_version=GmcmVersion, gmcm_capabilities=capabilities }, Json), new UTF8Encoding(false));
+                File.WriteAllText(temporary, JsonSerializer.Serialize(new { schema_version=1, captures=snapshot, applied=Applied.ToDictionary(p=>p.Key,p=>p.Value), applied_unique=unique, session_id=SessionId, bridge_version=ModManifest.Version.ToString(), extraction_rules_version=ResourceRules.Version, extraction_rules_hash=ResourceRules.Hash, gmcm_version=GmcmVersion, gmcm_capabilities=capabilities }, Json), new UTF8Encoding(false));
                 File.Move(temporary, path, true);
             }
             catch (IOException) { Interlocked.Exchange(ref Changed, 1); }
@@ -780,6 +797,12 @@ public class Capture
     public string mod_id {get;set;}=""; public string mod_version {get;set;}="";
     public string context {get;set;}=""; public string source {get;set;}=""; public string source_hash {get;set;}="";
     public string adapter {get;set;}=""; public string asset {get;set;}=""; public string[] path {get;set;}=Array.Empty<string>();
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? resolved_name {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? resolved_hash {get;set;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? locale {get;set;}
 }
 public class Translation : Capture { public string target {get;set;}=""; }
 public class TranslationPack
